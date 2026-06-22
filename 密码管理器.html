@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>本地密码管理器</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f0f2f5;--card:#fff;--border:#e0e0e0;--text:#1a1a1a;--text2:#666;
+  --primary:#d93025;--primary-h:#b3261e;--success:#1e8e3e;--radius:8px;
+  --shadow:0 1px 3px rgba(0,0,0,.1);--shadow2:0 4px 12px rgba(0,0,0,.15);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+
+/* ===== Start Screen ===== */
+#startScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.start-box{background:var(--card);border-radius:var(--radius);padding:40px;width:100%;max-width:420px;box-shadow:var(--shadow2);text-align:center}
+.start-box h1{font-size:24px;margin-bottom:8px}
+.start-box .sub{color:var(--text2);margin-bottom:32px;font-size:13px}
+.start-btns{display:flex;flex-direction:column;gap:12px}
+.start-btns .btn{justify-content:center;padding:12px;font-size:15px}
+.file-name{margin-top:16px;font-size:12px;color:var(--success);word-break:break-all}
+
+/* ===== Login ===== */
+#loginScreen{display:none;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-box{background:var(--card);border-radius:var(--radius);padding:40px;width:100%;max-width:400px;box-shadow:var(--shadow2)}
+.login-box h1{font-size:22px;text-align:center;margin-bottom:8px}
+.login-box .sub{text-align:center;color:var(--text2);margin-bottom:28px;font-size:13px}
+.login-box .form-group{margin-bottom:18px}
+.login-box label{display:block;margin-bottom:6px;font-weight:500;font-size:13px}
+.login-box input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;outline:none;transition:border .2s}
+.login-box input:focus{border-color:var(--primary)}
+.pw-wrap{position:relative}
+.pw-wrap .toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text2);user-select:none;font-size:13px}
+.hint{font-size:12px;color:var(--text2);margin-top:6px;line-height:1.6}
+
+/* ===== Buttons ===== */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:none;border-radius:6px;font-size:14px;cursor:pointer;transition:background .2s;font-family:inherit}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-h)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:#f5f5f5}
+.btn-sm{padding:5px 10px;font-size:12px}
+
+/* ===== Main ===== */
+#mainScreen{display:none;height:100vh;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:12px;padding:10px 20px;background:var(--card);border-bottom:1px solid var(--border);box-shadow:var(--shadow)}
+.topbar .title{font-size:16px;font-weight:600;flex-shrink:0}
+.topbar .file-tag{font-size:11px;color:var(--success);background:#e6f4ea;padding:3px 8px;border-radius:4px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
+.topbar .search{flex:1;max-width:400px;position:relative}
+.topbar .search input{width:100%;padding:7px 12px 7px 34px;border:1px solid var(--border);border-radius:6px;font-size:13px;outline:none}
+.topbar .search input:focus{border-color:var(--primary)}
+.topbar .search .icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:14px}
+.topbar .actions{display:flex;gap:8px;align-items:center}
+
+.layout{display:flex;height:calc(100vh - 50px)}
+.sidebar{width:200px;background:var(--card);border-right:1px solid var(--border);padding:12px 0;overflow-y:auto;flex-shrink:0}
+.sidebar .grp{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;cursor:pointer;transition:background .15s;font-size:13px}
+.sidebar .grp:hover{background:#f5f5f5}
+.sidebar .grp.active{background:#fce8e6;color:var(--primary);font-weight:500}
+.sidebar .grp .count{background:#e0e0e0;color:#666;border-radius:10px;padding:1px 8px;font-size:11px;min-width:20px;text-align:center}
+.sidebar .grp.active .count{background:var(--primary);color:#fff}
+.sidebar .divider{height:1px;background:var(--border);margin:8px 12px}
+
+.content{flex:1;overflow-y:auto;padding:16px}
+.entry-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.entry-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);transition:box-shadow .2s;position:relative}
+.entry-card:hover{box-shadow:var(--shadow2)}
+.entry-card .grp-tag{display:inline-block;font-size:11px;color:var(--text2);background:#f0f0f0;padding:2px 8px;border-radius:4px;margin-bottom:8px}
+.entry-card .platform{font-size:15px;font-weight:600;margin-bottom:10px;padding-right:60px}
+.entry-card .field{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px}
+.entry-card .field .lbl{color:var(--text2);width:50px;flex-shrink:0}
+.entry-card .field .val{flex:1;font-family:"Consolas","Monaco",monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entry-card .field .val.note{font-family:inherit;color:var(--text2);font-size:12px}
+.entry-card .field .copy{cursor:pointer;color:var(--primary);font-size:12px;flex-shrink:0;user-select:none}
+.entry-card .field .copy:hover{text-decoration:underline}
+.entry-card .field .eye{cursor:pointer;color:var(--text2);flex-shrink:0;user-select:none}
+.entry-card .card-actions{position:absolute;top:12px;right:12px;display:flex;gap:6px}
+.entry-card .card-actions .btn-sm{padding:3px 8px}
+.empty{text-align:center;padding:60px 20px;color:var(--text2)}
+.empty .big{font-size:40px;margin-bottom:12px}
+
+/* ===== Modal ===== */
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border-radius:var(--radius);padding:24px;width:90%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow2)}
+.modal h2{font-size:17px;margin-bottom:18px}
+.modal .form-group{margin-bottom:14px}
+.modal label{display:block;margin-bottom:5px;font-weight:500;font-size:13px}
+.modal input,.modal select,.modal textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;outline:none;font-family:inherit;transition:border .2s}
+.modal input:focus,.modal select:focus,.modal textarea:focus{border-color:var(--primary)}
+.modal textarea{resize:vertical;min-height:60px}
+.modal .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.modal .gen-row{display:flex;gap:8px;align-items:center}
+.modal .gen-row input{flex:1}
+.modal .strength{height:4px;border-radius:2px;margin-top:6px;transition:background .3s}
+
+/* ===== Password Generator ===== */
+.gen-options{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.gen-options label{display:flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer}
+.gen-options input[type=checkbox]{width:auto}
+.gen-length{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.gen-length input[type=range]{flex:1}
+
+/* ===== Toast ===== */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:#333;color:#fff;padding:10px 24px;border-radius:6px;font-size:13px;transition:transform .3s;z-index:2000;pointer-events:auto}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success{background:var(--success)}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#aaa}
+
+/* ===== Auto-lock countdown ===== */
+#lockCountdown{
+  display:none;
+  position:fixed;
+  bottom:8px;
+  right:10px;
+  font-size:11px;
+  color:#888;
+  background:rgba(255,255,255,0.85);
+  padding:3px 7px;
+  border-radius:4px;
+  border:1px solid #e0e0e0;
+  z-index:1500;
+  pointer-events:none;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:0.02em;
+  transition:color .5s;
+}
+
+.hidden{display:none!important}
+
+/* ===== Security: clipboard warning bar ===== */
+#clipWarn{
+  display:none;position:fixed;top:0;left:0;right:0;
+  background:#fff3cd;border-bottom:1px solid #ffc107;
+  color:#664d03;font-size:12px;padding:5px 14px;
+  z-index:2100;text-align:center;
+  animation:slideDown .2s ease;
+}
+@keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+
+/* ===== Security: audit log modal ===== */
+#auditModal .log-list{max-height:260px;overflow-y:auto;font-size:12px;color:#444;margin-top:8px}
+#auditModal .log-item{padding:5px 0;border-bottom:1px solid #f0f0f0;display:flex;gap:12px}
+#auditModal .log-item .ts{color:#888;flex-shrink:0;width:130px}
+
+/* ===== Security: password val no-select ===== */
+.entry-card .field .val.pw-val{
+  user-select:none;
+  -webkit-user-select:none;
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Start Screen ===== -->
+<div id="startScreen">
+  <div class="start-box">
+    <h1>🔐 密码管理器</h1>
+    <div class="sub">数据单独存文件 · 加密保护 · 不联网</div>
+    <!-- Last file hint -->
+    <div id="lastFileHint" style="display:none;margin-bottom:12px;padding:10px 14px;background:#f0f7ff;border:1px solid #c2d9f8;border-radius:6px;text-align:left;font-size:13px">
+      <div style="color:#555;margin-bottom:6px">上次使用的文件：</div>
+      <div id="lastFileName" style="font-weight:600;color:#1a73e8;word-break:break-all;margin-bottom:8px"></div>
+      <button id="continueBtn" class="btn btn-primary btn-sm" disabled style="width:100%;justify-content:center;opacity:0.6" onclick="openLastFile()">📂 继续使用此文件</button>
+    </div>
+    <div class="start-btns">
+      <button class="btn btn-ghost" onclick="openVaultFile()">📂 打开其他密码文件</button>
+      <button class="btn btn-ghost" onclick="newVaultFile()">📄 新建密码文件</button>
+    </div>
+    <div id="fileStatus" class="file-name"></div>
+    <div class="hint" style="margin-top:24px;text-align:left">
+      <b>使用说明：</b><br>
+      1. 首次使用点「新建密码文件」，选一个位置保存<br>
+      2. 之后每次使用直接点「继续使用此文件」<br>
+      3. 数据自动保存到文件，文件可复制到U盘备份<br>
+      4. 推荐用 Chrome 或 Edge 浏览器
+    </div>
+  </div>
+</div>
+
+<!-- ===== Login Screen ===== -->
+<div id="loginScreen">
+  <div class="login-box">
+    <h1>🔐 密码管理器</h1>
+    <div class="sub" id="loginSub">输入主密码解锁文件</div>
+    <div id="setupForm" style="display:none">
+      <div class="form-group">
+        <label>设置主密码</label>
+        <div class="pw-wrap">
+          <input type="password" id="setupPw1" placeholder="至少8位，含英文和数字" onpaste="return false">
+          <span class="toggle" onclick="togglePw('setupPw1',this)">显示</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>确认主密码</label>
+        <div class="pw-wrap">
+          <input type="password" id="setupPw2" placeholder="再输一遍">
+          <span class="toggle" onclick="togglePw('setupPw2',this)">显示</span>
+        </div>
+      </div>
+      <div class="hint">⚠️ 主密码是唯一解锁钥匙，务必记牢。丢失后无法找回，所有数据将无法解密。<br>密码要求：至少8位，必须包含英文字母和数字。</div>
+      <button class="btn btn-primary" style="width:100%;margin-top:16px;justify-content:center" onclick="doSetup()">创建保险箱</button>
+      <button class="btn btn-ghost" style="width:100%;margin-top:8px;justify-content:center" onclick="backToStart()">返回</button>
+    </div>
+    <div id="loginForm" style="display:none">
+      <div class="form-group">
+        <label>主密码</label>
+        <div class="pw-wrap">
+          <input type="password" id="loginPw" placeholder="输入主密码解锁" onpaste="return false" onkeydown="if(event.key==='Enter')doLogin()">
+          <span class="toggle" onclick="togglePw('loginPw',this)">显示</span>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doLogin()">解锁</button>
+      <button class="btn btn-ghost" style="width:100%;margin-top:8px;justify-content:center" onclick="backToStart()">返回</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Main Screen ===== -->
+<div id="mainScreen">
+  <div class="topbar">
+    <span class="title">🔐 密码管理器</span>
+    <span class="file-tag" id="fileTag" title="">📁 未绑定文件</span>
+    <div class="search">
+      <span class="icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="搜索平台名/账号..." oninput="renderEntries()">
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost btn-sm" onclick="openGenerator()">🎲 生成密码</button>
+      <button class="btn btn-ghost btn-sm" onclick="showAuditLog()">🕵️ 访问记录</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportBackup()">📤 另存备份</button>
+      <button class="btn btn-ghost btn-sm" onclick="lockApp()">🔒 锁定</button>
+      <button class="btn btn-primary btn-sm" onclick="openAdd()">+ 添加</button>
+    </div>
+  </div>
+  <div class="layout">
+    <div class="sidebar" id="sidebar"></div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<!-- ===== Add/Edit Modal ===== -->
+<div class="modal-overlay" id="entryModal">
+  <div class="modal">
+    <h2 id="modalTitle">添加账号</h2>
+    <input type="hidden" id="editId">
+    <div class="form-group">
+      <label>分组</label>
+      <select id="entryGroup"></select>
+    </div>
+    <div class="form-group">
+      <label>平台名称 *</label>
+      <input type="text" id="entryPlatform" placeholder="如：拼多多主店">
+    </div>
+    <div class="form-group">
+      <label>账号/手机号</label>
+      <input type="text" id="entryUser" placeholder="登录账号">
+    </div>
+    <div class="form-group">
+      <label>密码</label>
+      <div class="gen-row">
+        <div class="pw-wrap" style="flex:1">
+          <input type="password" id="entryPw" placeholder="密码" oninput="checkStrength(this.value)">
+          <span class="toggle" onclick="togglePw('entryPw',this)">显示</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="fillGenerated()">🎲</button>
+      </div>
+      <div class="strength" id="strengthBar"></div>
+    </div>
+    <div class="form-group">
+      <label>网址</label>
+      <input type="text" id="entryUrl" placeholder="https://...">
+    </div>
+    <div class="form-group">
+      <label>备注</label>
+      <textarea id="entryNote" placeholder="安全问题答案、备用码、子账号等..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('entryModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveEntry()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Generator Modal ===== -->
+<div class="modal-overlay" id="genModal">
+  <div class="modal">
+    <h2>🎲 密码生成器</h2>
+    <div class="gen-length">
+      <span style="font-size:13px">长度</span>
+      <input type="range" id="genLen" min="8" max="32" value="16" oninput="document.getElementById('genLenVal').textContent=this.value;generatePw()">
+      <span id="genLenVal" style="font-size:13px;min-width:24px;text-align:center">16</span>
+    </div>
+    <div class="gen-options">
+      <label><input type="checkbox" id="genUpper" checked onchange="generatePw()"> 大写字母 A-Z</label>
+      <label><input type="checkbox" id="genLower" checked onchange="generatePw()"> 小写字母 a-z</label>
+      <label><input type="checkbox" id="genNum" checked onchange="generatePw()"> 数字 0-9</label>
+      <label><input type="checkbox" id="genSym" checked onchange="generatePw()"> 特殊符号 !@#$%...</label>
+    </div>
+    <div class="form-group">
+      <div class="pw-wrap">
+        <input type="text" id="genResult" readonly style="font-family:Consolas,Monaco,monospace;font-size:15px">
+        <span class="toggle" onclick="copyText(document.getElementById('genResult').value)">复制</span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="generatePw()">🔄 重新生成</button>
+      <button class="btn btn-primary" onclick="copyText(document.getElementById('genResult').value);closeModal('genModal')">复制并关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Change Password Modal ===== -->
+<div class="modal-overlay" id="pwModal">
+  <div class="modal">
+    <h2>修改主密码</h2>
+    <div class="hint" style="margin-bottom:16px;color:var(--primary)">修改后会重新加密所有数据并自动保存到文件。请确保新密码记牢。</div>
+    <div class="form-group">
+      <label>当前主密码</label>
+      <div class="pw-wrap">
+        <input type="password" id="oldPw" placeholder="当前密码">
+        <span class="toggle" onclick="togglePw('oldPw',this)">显示</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>新主密码</label>
+      <div class="pw-wrap">
+        <input type="password" id="newPw1" placeholder="至少6位">
+        <span class="toggle" onclick="togglePw('newPw1',this)">显示</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>确认新主密码</label>
+      <div class="pw-wrap">
+        <input type="password" id="newPw2" placeholder="再输一遍">
+        <span class="toggle" onclick="togglePw('newPw2',this)">显示</span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('pwModal')">取消</button>
+      <button class="btn btn-primary" onclick="changeMasterPw()">确认修改</button>
+    </div>
+  </div>
+</div>
+
+<div id="clipWarn">⚠️ 剪贴板含有敏感密码，请勿粘贴到不可信位置 &nbsp;<span style="cursor:pointer;font-weight:bold;padding:0 6px" onclick="clearClipWarn()">✕</span></div>
+
+<!-- ===== Audit Log Modal ===== -->
+<div class="modal-overlay" id="auditModal">
+  <div class="modal" style="max-width:520px">
+    <h2>🕵️ 访问记录</h2>
+    <div class="hint" style="margin-bottom:8px">记录最近20次成功解锁的时间，保存在密码文件中。</div>
+    <div class="log-list" id="auditList"></div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn btn-ghost" onclick="closeModal('auditModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="lockCountdown"></div>
+
+<script>
+// ==================== Config ====================
+const GROUPS = ['拼多多','天猫/千牛','1688','阿里国际站','速卖通','其他'];
+const FILE_FORMAT_VERSION = 1;
+// ==================== IndexedDB for persisting fileHandle ====================
+// File System Access API fileHandle can be stored in IndexedDB across page reloads.
+// On reload: restore handle → call requestPermission() (requires user gesture) → read file directly.
+const IDB_NAME = 'pm_store';
+const IDB_STORE = 'handles';
+const IDB_KEY = 'lastHandle';
+
+function openIDB(){
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE);
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveHandleToIDB(handle){
+  try{
+    const db = await openIDB();
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(handle, IDB_KEY);
+  }catch(e){ /* ignore */ }
+}
+
+async function loadHandleFromIDB(){
+  try{
+    const db = await openIDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE, 'readonly');
+      const req = tx.objectStore(IDB_STORE).get(IDB_KEY);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    });
+  }catch(e){ return null; }
+}
+
+async function clearHandleFromIDB(){
+  try{
+    const db = await openIDB();
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).delete(IDB_KEY);
+  }catch(e){ /* ignore */ }
+}
+
+// ==================== Last File Hint ====================
+let savedHandle = null; // restored handle from IDB
+
+async function initLastFileHint(){
+  const hint = document.getElementById('lastFileHint');
+  const btn  = document.getElementById('continueBtn');
+  if(!supportsFSAPI()){ hint.style.display = 'none'; return; }
+
+  savedHandle = await loadHandleFromIDB();
+  if(!savedHandle){ hint.style.display = 'none'; return; }
+
+  // Show hint with file name
+  document.getElementById('lastFileName').textContent = savedHandle.name;
+  hint.style.display = 'block';
+
+  // Verify the file still exists / is accessible without permission prompt
+  try{
+    const perm = await savedHandle.queryPermission({ mode: 'read' });
+    if(perm === 'denied'){
+      // File permission permanently denied — clear and hide
+      await clearHandleFromIDB();
+      savedHandle = null;
+      hint.style.display = 'none';
+      return;
+    }
+    // 'granted' or 'prompt' — button stays enabled
+    if(btn){ btn.disabled = false; btn.style.opacity = '1'; }
+  }catch(e){
+    // Handle invalid (e.g. file deleted or drive removed) — disable button
+    if(btn){ btn.disabled = true; btn.title = '文件不可用，请重新选择'; }
+  }
+}
+
+async function openLastFile(){
+  if(!savedHandle){ await openVaultFile(); return; }
+
+  try{
+    // requestPermission needs a user gesture — this is called from a button click, so it's fine
+    const perm = await savedHandle.requestPermission({ mode: 'read' });
+    if(perm !== 'granted'){
+      toast('未获得文件访问权限');
+      return;
+    }
+    const file = await savedHandle.getFile();
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if(!data.salt || !data.verify){ toast('不是有效的密码文件'); return; }
+    if(!data.auditLog) data.auditLog = [];
+
+    fileHandle = savedHandle;
+    vaultData = data;
+    fileMode = 'fs';
+    updateFileTag(fileHandle.name);
+    showLoginScreen();
+  }catch(e){
+    toast('无法打开文件，请重新选择');
+    await clearHandleFromIDB();
+    savedHandle = null;
+    document.getElementById('lastFileHint').style.display = 'none';
+  }
+}
+
+function saveLastFileName(name){
+  // kept for compatibility — actual persistence now via IDB handle
+  try{ localStorage.setItem('pm_last_file_name', name); }catch(e){}
+}
+
+// ==================== State ====================
+let vault = [];
+let cryptoKey = null;
+let currentGroup = '全部';
+let editMode = 'add';
+let fileHandle = null;      // File System Access API handle
+let vaultData = null;       // parsed file content {salt, verify, data:{ct,iv}}
+let fileMode = 'none';      // 'fs' = File System Access API, 'manual' = download/upload fallback
+let isDirty = false;        // unsaved changes flag (manual mode)
+
+// ===== #5 Login failure cooldown =====
+let loginFailCount = 0;
+let loginLockUntil = 0;
+
+// ===== #6 Auto-lock timer with countdown display =====
+let autoLockTimer = null;
+let autoLockCountdownRaf = null; // requestAnimationFrame handle
+let autoLockDeadline = 0;
+let lastDisplayedSec = -1;       // 防止重复刷新 DOM
+const AUTO_LOCK_MS = 15 * 60 * 1000; // 15 minutes
+
+function formatCountdown(remainingMs){
+  const totalSec = Math.max(0, Math.ceil(remainingMs / 1000));
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return m + ':' + String(s).padStart(2,'0');
+}
+
+function countdownLoop(){
+  const el = document.getElementById('lockCountdown');
+  if(!el || el.style.display === 'none') return; // 已停止
+  const remaining = autoLockDeadline - Date.now();
+  const sec = Math.max(0, Math.ceil(remaining / 1000));
+  // 只有秒数变化时才更新 DOM，避免闪烁
+  if(sec !== lastDisplayedSec){
+    lastDisplayedSec = sec;
+    el.textContent = '🔒 ' + formatCountdown(remaining);
+    const ratio = remaining / AUTO_LOCK_MS;
+    if(ratio > 0.5)       el.style.color = '#888';
+    else if(ratio > 0.2)  el.style.color = '#e67e00';
+    else                  el.style.color = '#d93025';
+  }
+  autoLockCountdownRaf = requestAnimationFrame(countdownLoop);
+}
+
+function startCountdownDisplay(){
+  const el = document.getElementById('lockCountdown');
+  if(el) el.style.display = 'block';
+  lastDisplayedSec = -1; // 强制首帧立即渲染
+  if(autoLockCountdownRaf) cancelAnimationFrame(autoLockCountdownRaf);
+  autoLockCountdownRaf = requestAnimationFrame(countdownLoop);
+}
+
+function stopCountdownDisplay(){
+  if(autoLockCountdownRaf){ cancelAnimationFrame(autoLockCountdownRaf); autoLockCountdownRaf = null; }
+  lastDisplayedSec = -1;
+  const el = document.getElementById('lockCountdown');
+  if(el){ el.style.display = 'none'; el.textContent = ''; }
+}
+
+// 节流：连续操作时最多每 500ms 重置一次 deadline，避免高频抖动
+let _resetThrottleTimer = null;
+function resetAutoLock(){
+  if(document.getElementById('mainScreen').style.display === 'none') return;
+  // 立即更新 deadline（保证倒计时读值正确）
+  autoLockDeadline = Date.now() + AUTO_LOCK_MS;
+  // 节流重置 setTimeout（避免 clearTimeout/setTimeout 高频调用）
+  if(_resetThrottleTimer) return;
+  _resetThrottleTimer = setTimeout(() => {
+    _resetThrottleTimer = null;
+    clearTimeout(autoLockTimer);
+    autoLockTimer = setTimeout(() => {
+      stopCountdownDisplay();
+      lockApp();
+      toast('已自动锁定（15分钟无操作）');
+    }, AUTO_LOCK_MS);
+  }, 500);
+}
+['mousemove','mousedown','keydown','touchstart','scroll'].forEach(evt => {
+  document.addEventListener(evt, resetAutoLock, {passive:true});
+});
+
+// ==================== Crypto ====================
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+
+function buf2hex(buf){
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function hex2buf(hex){
+  const arr = new Uint8Array(hex.length/2);
+  for(let i=0;i<hex.length;i+=2) arr[i/2]=parseInt(hex.substr(i,2),16);
+  return arr.buffer;
+}
+
+async function deriveKey(password, saltHex){
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt:hex2buf(saltHex), iterations:500000, hash:'SHA-256'},
+    keyMaterial,
+    {name:'AES-GCM', length:256},
+    false,
+    ['encrypt','decrypt']
+  );
+}
+
+async function encryptData(plaintext, key){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv:iv}, key, enc.encode(plaintext));
+  return {ct: buf2hex(ct), iv: buf2hex(iv)};
+}
+
+async function decryptData(ctHex, ivHex, key){
+  const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:hex2buf(ivHex)}, key, hex2buf(ctHex));
+  return dec.decode(pt);
+}
+
+// ==================== File System Access API ====================
+function supportsFSAPI(){
+  return 'showOpenFilePicker' in window && 'showSaveFilePicker' in window;
+}
+
+async function openVaultFile(){
+  if(!supportsFSAPI()){
+    // Fallback: use file input
+    manualOpenFile();
+    return;
+  }
+  try{
+    const [handle] = await window.showOpenFilePicker({
+      types: [{description: '密码文件', accept: {'application/json': ['.json']}}],
+      multiple: false
+    });
+    const file = await handle.getFile();
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    if(!data.salt || !data.verify){
+      toast('不是有效的密码文件');
+      return;
+    }
+    // 兼容旧文件（无 auditLog 字段）
+    if(!data.auditLog) data.auditLog = [];
+
+    fileHandle = handle;
+    vaultData = data;
+    fileMode = 'fs';
+    updateFileTag(handle.name);
+    saveLastFileName(handle.name);
+    saveHandleToIDB(handle);
+    showLoginScreen();
+  }catch(e){
+    if(e.name !== 'AbortError') toast('打开文件失败: ' + e.message);
+  }
+}
+
+async function newVaultFile(){
+  if(!supportsFSAPI()){
+    // Fallback: will create and download
+    fileMode = 'manual';
+    vaultData = null;
+    updateFileTag('新建文件（手动保存）');
+    showSetupScreen();
+    return;
+  }
+  try{
+    const handle = await window.showSaveFilePicker({
+      suggestedName: '我的密码库.json',
+      types: [{description: '密码文件', accept: {'application/json': ['.json']}}]
+    });
+    fileHandle = handle;
+    fileMode = 'fs';
+    updateFileTag(handle.name);
+    saveLastFileName(handle.name);
+    saveHandleToIDB(handle);
+    showSetupScreen();
+  }catch(e){
+    if(e.name !== 'AbortError') toast('创建文件失败: ' + e.message);
+  }
+}
+
+function updateFileTag(name){
+  const tag = document.getElementById('fileTag');
+  tag.textContent = '📁 ' + name;
+  tag.title = name;
+}
+
+// ===== Manual mode (fallback for browsers without FS API) =====
+function manualOpenFile(){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    try{
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if(!data.salt || !data.verify){ toast('不是有效的密码文件'); return; }
+      vaultData = data;
+      fileMode = 'manual';
+      updateFileTag(file.name + '（手动保存）');
+      showLoginScreen();
+    }catch(err){
+      toast('读取文件失败');
+    }
+  };
+  input.click();
+}
+
+async function saveToFile(){
+  if(!vaultData) return;
+
+  const content = JSON.stringify({
+    version: FILE_FORMAT_VERSION,
+    salt: vaultData.salt,
+    verify: vaultData.verify,
+    data: vaultData.data,
+    auditLog: vaultData.auditLog || [],
+    modified: new Date().toISOString()
+  }, null, 2);
+
+  if(fileMode === 'fs' && fileHandle){
+    const writable = await fileHandle.createWritable();
+    await writable.write(content);
+    await writable.close();
+  } else {
+    // Manual mode: trigger download
+    const blob = new Blob([content], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const fname = fileHandle ? fileHandle.name : '我的密码库.json';
+    a.download = fname;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('文件已下载，请替换原文件', 'success');
+  }
+}
+
+// ==================== Screen Management ====================
+function showStartScreen(){
+  document.getElementById('startScreen').style.display = 'flex';
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'none';
+  initLastFileHint(); // async, runs in background — intentional
+}
+
+function showLoginScreen(){
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('mainScreen').style.display = 'none';
+  document.getElementById('loginForm').style.display = 'block';
+  document.getElementById('setupForm').style.display = 'none';
+  document.getElementById('loginSub').textContent = '输入主密码解锁文件';
+}
+
+function showSetupScreen(){
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('mainScreen').style.display = 'none';
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('setupForm').style.display = 'block';
+  document.getElementById('loginSub').textContent = '首次使用，请设置主密码';
+}
+
+function backToStart(){
+  vault = [];
+  cryptoKey = null;
+  vaultData = null;
+  fileHandle = null;
+  fileMode = 'none';
+  currentGroup = '全部';
+  showStartScreen();
+}
+
+// ==================== Master Password Policy ====================
+function validateMasterPw(pw){
+  if(pw.length < 8) return '主密码至少8位';
+  if(!/[a-zA-Z]/.test(pw)) return '主密码必须包含英文字母';
+  if(!/[0-9]/.test(pw)) return '主密码必须包含数字';
+  return null; // pass
+}
+
+// ==================== Setup / Login ====================
+async function doSetup(){
+  const pw1 = document.getElementById('setupPw1').value;
+  const pw2 = document.getElementById('setupPw2').value;
+  const err = validateMasterPw(pw1);
+  if(err){ toast(err); return; }
+  if(pw1 !== pw2){ toast('两次密码不一致'); return; }
+
+  const salt = buf2hex(crypto.getRandomValues(new Uint8Array(16)));
+  cryptoKey = await deriveKey(pw1, salt);
+  const verify = await encryptData('__VERIFY_OK__', cryptoKey);
+
+  vaultData = {
+    version: FILE_FORMAT_VERSION,
+    salt: salt,
+    verify: verify,
+    data: {ct:'', iv:''}
+  };
+  vault = [];
+
+  await saveToFile();
+  enterApp();
+  toast('保险箱创建成功，已保存到文件', 'success');
+}
+
+async function doLogin(){
+  const pw = document.getElementById('loginPw').value;
+  if(!vaultData){ toast('请先打开或新建文件'); return; }
+
+  // #5 冷却检查
+  const now = Date.now();
+  if(now < loginLockUntil){
+    const sec = Math.ceil((loginLockUntil - now) / 1000);
+    toast(`密码错误次数过多，请等待 ${sec} 秒`);
+    return;
+  }
+
+  try{
+    cryptoKey = await deriveKey(pw, vaultData.salt);
+    const check = await decryptData(vaultData.verify.ct, vaultData.verify.iv, cryptoKey);
+    if(check !== '__VERIFY_OK__') throw new Error('fail');
+  }catch(e){
+    cryptoKey = null;
+    loginFailCount++;
+    if(loginFailCount >= 3){
+      loginLockUntil = Date.now() + 30000;
+      loginFailCount = 0;
+      toast('连续错误3次，锁定30秒');
+    } else {
+      toast(`主密码错误（已失败 ${loginFailCount}/3 次）`);
+    }
+    return;
+  }
+
+  // 登录成功，重置失败计数
+  loginFailCount = 0;
+  loginLockUntil = 0;
+
+  if(vaultData.data && vaultData.data.ct){
+    try{
+      const json = await decryptData(vaultData.data.ct, vaultData.data.iv, cryptoKey);
+      vault = JSON.parse(json);
+    }catch(e){
+      vault = [];
+    }
+  } else {
+    vault = [];
+  }
+
+  // 审计日志：记录本次解锁时间
+  await appendAuditLog();
+
+  enterApp();
+}
+
+function enterApp(){
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'block';
+  document.getElementById('loginPw').value = '';
+  document.getElementById('setupPw1').value = '';
+  document.getElementById('setupPw2').value = '';
+  resetAutoLock(); // #6 启动自动锁定计时
+  startCountdownDisplay(); // #6 启动倒计时显示
+  renderSidebar();
+  renderEntries();
+}
+
+function lockApp(){
+  clearTimeout(autoLockTimer); // #6 清除自动锁定计时
+  stopCountdownDisplay();      // #6 停止倒计时显示
+  vault = [];
+  cryptoKey = null;
+  currentGroup = '全部';
+  document.getElementById('mainScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginForm').style.display = 'block';
+  document.getElementById('setupForm').style.display = 'none';
+  document.getElementById('loginSub').textContent = '输入主密码解锁文件';
+  document.getElementById('loginPw').value = '';
+}
+
+// ==================== Audit Log ====================
+async function appendAuditLog(){
+  if(!vaultData || !cryptoKey) return;
+  const now = new Date().toISOString();
+  const ua = navigator.userAgent.slice(0, 80); // 浏览器简短标识
+  const entry = { time: now, ua };
+  if(!Array.isArray(vaultData.auditLog)) vaultData.auditLog = [];
+  vaultData.auditLog.push(entry);
+  // 只保留最近 20 条
+  if(vaultData.auditLog.length > 20) vaultData.auditLog = vaultData.auditLog.slice(-20);
+  // 写入文件（只改元数据，不重新加密 vault 数据）
+  try{ await saveToFile(); }catch(e){}
+}
+
+function showAuditLog(){
+  const list = document.getElementById('auditList');
+  const logs = (vaultData && vaultData.auditLog) || [];
+  if(logs.length === 0){
+    list.innerHTML = '<div style="color:#888;padding:8px 0">暂无记录（本次版本升级后首次登录起开始记录）</div>';
+  } else {
+    // 倒序显示（最新在前）
+    list.innerHTML = [...logs].reverse().map(l => {
+      const d = new Date(l.time);
+      const ts = d.toLocaleString('zh-CN', {hour12:false});
+      const browser = (l.ua||'').replace(/.*?(Chrome|Firefox|Safari|Edge)[\/ ]([\d.]+).*/i, '$1 $2') || '未知浏览器';
+      return `<div class="log-item"><span class="ts">${ts}</span><span>${browser}</span></div>`;
+    }).join('');
+  }
+  openModal('auditModal');
+}
+
+// ==================== Persist ====================
+async function persist(){
+  if(!vaultData || !cryptoKey) return;
+  const json = JSON.stringify(vault);
+  const enc2 = await encryptData(json, cryptoKey);
+  vaultData.data = enc2;
+  await saveToFile();
+}
+
+// ==================== Sidebar ====================
+function renderSidebar(){
+  const sb = document.getElementById('sidebar');
+  const counts = {};
+  counts['全部'] = vault.length;
+  GROUPS.forEach(g => counts[g] = vault.filter(e => e.group === g).length);
+
+  let html = `<div class="grp ${currentGroup==='全部'?'active':''}" onclick="selectGroup('全部')"><span>📋 全部</span><span class="count">${counts['全部']}</span></div>`;
+  html += '<div class="divider"></div>';
+  GROUPS.forEach(g => {
+    html += `<div class="grp ${currentGroup===g?'active':''}" onclick="selectGroup('${g}')"><span>${getGrpIcon(g)} ${g}</span><span class="count">${counts[g]||0}</span></div>`;
+  });
+  html += '<div class="divider"></div>';
+  html += `<div class="grp" onclick="openModal('pwModal')"><span>🔑 修改主密码</span></div>`;
+  sb.innerHTML = html;
+}
+
+function getGrpIcon(g){
+  const m = {'拼多多':'🟠','天猫/千牛':'🔴','1688':'🟠','阿里国际站':'🔵','速卖通':'🔴','其他':'⚪'};
+  return m[g] || '📁';
+}
+
+function selectGroup(g){
+  currentGroup = g;
+  renderSidebar();
+  renderEntries();
+}
+
+// ==================== Entries ====================
+function renderEntries(){
+  const content = document.getElementById('content');
+  const kw = document.getElementById('searchInput').value.trim().toLowerCase();
+
+  let list = vault;
+  if(currentGroup !== '全部') list = list.filter(e => e.group === currentGroup);
+  if(kw) list = list.filter(e =>
+    (e.platform||'').toLowerCase().includes(kw) ||
+    (e.user||'').toLowerCase().includes(kw) ||
+    (e.note||'').toLowerCase().includes(kw)   // #9 备注也纳入搜索
+  );
+
+  if(list.length === 0){
+    content.innerHTML = `<div class="empty"><div class="big">📭</div><div>${vault.length===0?'还没有保存任何账号':'没有匹配的结果'}</div><div style="margin-top:8px;font-size:13px">${vault.length===0?'点击右上角 + 添加 开始使用':''}</div></div>`;
+    return;
+  }
+
+  content.innerHTML = '<div class="entry-grid">' + list.map(e => `
+    <div class="entry-card">
+      <div class="card-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openEdit('${e.id}')">编辑</button>
+        <button class="btn btn-ghost btn-sm" onclick="deleteEntry('${e.id}')">删除</button>
+      </div>
+      <div class="grp-tag">${getGrpIcon(e.group||'其他')} ${e.group||'其他'}</div>
+      <div class="platform">${escHtml(e.platform||'')}</div>
+      <div class="field"><span class="lbl">账号</span><span class="val" title="${escAttr(e.user||'')}">${escHtml(e.user||'—')}</span><span class="copy" onclick="copyText('${escAttr(e.user||'')}')">复制</span></div>
+      <div class="field"><span class="lbl">密码</span><span class="val pw-val" id="pw_${e.id}">••••••••</span><span class="eye" onclick="toggleEntryPw('${e.id}',this)">👁</span><span class="copy" onclick="copyEntryPw('${e.id}')">复制</span></div>
+      ${e.url ? `<div class="field"><span class="lbl">网址</span><span class="val" title="${escAttr(e.url)}"><a href="${escAttr(e.url)}" target="_blank" style="color:var(--primary);text-decoration:none">${escHtml(e.url)}</a></span></div>` : ''}
+      ${e.note ? `<div class="field"><span class="lbl">备注</span><span class="val note">${escHtml(e.note)}</span></div>` : ''}
+    </div>
+  `).join('') + '</div>';
+}
+
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ===== pw auto-hide timers (id → timer) =====
+const pwHideTimers = {};
+
+function toggleEntryPw(id, el){
+  const span = document.getElementById('pw_' + id);
+  const entry = vault.find(x => x.id === id); // #1 从内存读，不从 DOM 读
+  if(!entry) return;
+  if(span.dataset.shown === '1'){
+    // 手动隐藏
+    clearTimeout(pwHideTimers[id]);
+    delete pwHideTimers[id];
+    span.textContent = '••••••••';
+    span.dataset.shown = '0';
+    el.textContent = '👁';
+    el.title = '';
+  } else {
+    span.textContent = entry.pw || '';
+    span.dataset.shown = '1';
+    el.textContent = '🙈';
+    el.title = '10秒后自动隐藏';
+    // 10秒自动隐回
+    clearTimeout(pwHideTimers[id]);
+    pwHideTimers[id] = setTimeout(() => {
+      if(span.dataset.shown === '1'){
+        span.textContent = '••••••••';
+        span.dataset.shown = '0';
+        el.textContent = '👁';
+        el.title = '';
+      }
+    }, 10000);
+  }
+}
+
+function copyEntryPw(id){ // #1 从内存读密码再复制
+  const entry = vault.find(x => x.id === id);
+  if(entry) copyText(entry.pw || '', true); // true = 敏感内容，显示警告条
+}
+
+// ==================== Add / Edit ====================
+function openAdd(){
+  editMode = 'add';
+  document.getElementById('modalTitle').textContent = '添加账号';
+  document.getElementById('editId').value = '';
+  fillGroupSelect('');
+  document.getElementById('entryPlatform').value = '';
+  document.getElementById('entryUser').value = '';
+  document.getElementById('entryPw').value = '';
+  document.getElementById('entryUrl').value = '';
+  document.getElementById('entryNote').value = '';
+  document.getElementById('strengthBar').style.background = 'transparent';
+  openModal('entryModal');
+  setTimeout(() => document.getElementById('entryPlatform').focus(), 50);
+}
+
+function openEdit(id){
+  const e = vault.find(x => x.id === id);
+  if(!e) return;
+  editMode = 'edit';
+  document.getElementById('modalTitle').textContent = '编辑账号';
+  document.getElementById('editId').value = id;
+  fillGroupSelect(e.group||'');
+  document.getElementById('entryPlatform').value = e.platform||'';
+  document.getElementById('entryUser').value = e.user||'';
+  document.getElementById('entryPw').value = e.pw||'';
+  document.getElementById('entryUrl').value = e.url||'';
+  document.getElementById('entryNote').value = e.note||'';
+  checkStrength(e.pw||'');
+  openModal('entryModal');
+}
+
+function fillGroupSelect(selected){
+  const sel = document.getElementById('entryGroup');
+  sel.innerHTML = GROUPS.map(g => `<option value="${g}" ${g===selected?'selected':''}>${g}</option>`).join('');
+}
+
+async function saveEntry(){
+  const platform = document.getElementById('entryPlatform').value.trim();
+  if(!platform){ toast('平台名称不能为空'); return; }
+
+  const entry = {
+    id: editMode === 'edit' ? document.getElementById('editId').value : Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    group: document.getElementById('entryGroup').value,
+    platform: platform,
+    user: document.getElementById('entryUser').value.trim(),
+    pw: document.getElementById('entryPw').value,
+    url: document.getElementById('entryUrl').value.trim(),
+    note: document.getElementById('entryNote').value.trim(),
+    updated: Date.now()
+  };
+
+  if(editMode === 'edit'){
+    const idx = vault.findIndex(x => x.id === entry.id);
+    if(idx >= 0) vault[idx] = entry;
+  } else {
+    vault.push(entry);
+  }
+
+  isDirty = true; // #3 标记有变更
+  await persist();
+  renderSidebar();
+  renderEntries();
+  closeModal('entryModal');
+  toast('已保存并写入文件', 'success');
+}
+
+// #2 删除撤销支持
+let deletedEntry = null;
+let deleteUndoTimer = null;
+
+async function deleteEntry(id){
+  if(!confirm('确认删除这条记录？')) return;
+  deletedEntry = vault.find(x => x.id === id) || null;
+  vault = vault.filter(x => x.id !== id);
+  isDirty = true; // #3
+  await persist();
+  renderSidebar();
+  renderEntries();
+
+  // 清除旧的撤销计时
+  clearTimeout(deleteUndoTimer);
+
+  // 显示可撤销的 toast（5 秒）
+  const t = document.getElementById('toast');
+  t.innerHTML = '已删除 <span style="text-decoration:underline;cursor:pointer;margin-left:8px" onclick="undoDelete()">撤销</span>';
+  t.className = 'toast show';
+  clearTimeout(toastTimer);
+  deleteUndoTimer = setTimeout(() => {
+    t.classList.remove('show');
+    deletedEntry = null;
+  }, 5000);
+}
+
+async function undoDelete(){
+  if(!deletedEntry) return;
+  clearTimeout(deleteUndoTimer);
+  vault.push(deletedEntry);
+  vault.sort((a, b) => (a.updated||0) - (b.updated||0));
+  deletedEntry = null;
+  isDirty = true; // #3
+  await persist();
+  renderSidebar();
+  renderEntries();
+  toast('已撤销删除', 'success');
+}
+
+// ==================== Generator ====================
+function openGenerator(){
+  generatePw();
+  openModal('genModal');
+}
+
+function generatePw(){
+  const len = parseInt(document.getElementById('genLen').value);
+  const upper = document.getElementById('genUpper').checked;
+  const lower = document.getElementById('genLower').checked;
+  const num = document.getElementById('genNum').checked;
+  const sym = document.getElementById('genSym').checked;
+
+  let chars = '';
+  if(upper) chars += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  if(lower) chars += 'abcdefghijklmnopqrstuvwxyz';
+  if(num) chars += '0123456789';
+  if(sym) chars += '!@#$%^&*()-_=+[]{}';
+  if(!chars){ document.getElementById('genResult').value = '请至少选择一种字符'; return; }
+
+  const arr = new Uint32Array(len);
+  crypto.getRandomValues(arr);
+  let pw = '';
+  for(let i=0;i<len;i++) pw += chars[arr[i] % chars.length];
+  document.getElementById('genResult').value = pw;
+}
+
+function fillGenerated(){
+  generatePw();
+  document.getElementById('entryPw').value = document.getElementById('genResult').value;
+  checkStrength(document.getElementById('entryPw').value);
+}
+
+// ==================== Strength ====================
+function checkStrength(pw){
+  const bar = document.getElementById('strengthBar');
+  if(!pw){ bar.style.background = 'transparent'; return; }
+  let score = 0;
+  if(pw.length >= 8) score++;
+  if(pw.length >= 12) score++;
+  if(pw.length >= 16) score++;
+  if(/[a-z]/.test(pw)) score++;
+  if(/[A-Z]/.test(pw)) score++;
+  if(/[0-9]/.test(pw)) score++;
+  if(/[^a-zA-Z0-9]/.test(pw)) score++;
+  const colors = ['#ddd','#d93025','#f9a825','#f9a825','#1e8e3e','#1e8e3e','#1e8e3e','#1e8e3e'];
+  const widths = ['0%','15%','30%','50%','65%','80%','90%','100%'];
+  bar.style.background = colors[score] || '#ddd';
+  bar.style.width = widths[score] || '0%';
+}
+
+// ==================== Export Backup (save as) ====================
+async function exportBackup(){
+  if(!vaultData || !cryptoKey){ toast('没有数据'); return; }
+  const content = JSON.stringify({
+    version: FILE_FORMAT_VERSION,
+    salt: vaultData.salt,
+    verify: vaultData.verify,
+    data: vaultData.data,
+    auditLog: vaultData.auditLog || [],
+    modified: new Date().toISOString(),
+    backup: true
+  }, null, 2);
+
+  const blob = new Blob([content], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `密码库备份_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('备份文件已下载', 'success');
+}
+
+// ==================== Change Master Password ====================
+async function changeMasterPw(){
+  const oldPw = document.getElementById('oldPw').value;
+  const np1 = document.getElementById('newPw1').value;
+  const np2 = document.getElementById('newPw2').value;
+
+  if(!vaultData){ toast('数据异常'); return; }
+  try{
+    const testKey = await deriveKey(oldPw, vaultData.salt);
+    const check = await decryptData(vaultData.verify.ct, vaultData.verify.iv, testKey);
+    if(check !== '__VERIFY_OK__'){ toast('当前密码错误'); return; }
+  }catch(e){ toast('当前密码错误'); return; }
+
+  const err = validateMasterPw(np1);
+  if(err){ toast(err); return; }
+  if(np1 !== np2){ toast('两次新密码不一致'); return; }
+
+  const newSalt = buf2hex(crypto.getRandomValues(new Uint8Array(16)));
+  cryptoKey = await deriveKey(np1, newSalt);
+  const verify = await encryptData('__VERIFY_OK__', cryptoKey);
+  const json = JSON.stringify(vault);
+  const enc2 = await encryptData(json, cryptoKey);
+
+  vaultData.salt = newSalt;
+  vaultData.verify = verify;
+  vaultData.data = enc2;
+  await saveToFile();
+
+  closeModal('pwModal');
+  document.getElementById('oldPw').value = '';
+  document.getElementById('newPw1').value = '';
+  document.getElementById('newPw2').value = '';
+  toast('主密码已更新，文件已保存', 'success');
+}
+
+// ==================== Utils ====================
+function togglePw(id, el){
+  const inp = document.getElementById(id);
+  if(inp.type === 'password'){ inp.type = 'text'; el.textContent = '隐藏'; }
+  else { inp.type = 'password'; el.textContent = '显示'; }
+}
+
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if(e.target === o) o.classList.remove('show'); });
+});
+
+// ===== Clipboard warning bar =====
+let clipWarnTimer = null;
+function showClipWarn(){
+  const bar = document.getElementById('clipWarn');
+  if(!bar) return;
+  bar.style.display = 'block';
+  clearTimeout(clipWarnTimer);
+  clipWarnTimer = setTimeout(() => { bar.style.display = 'none'; }, 15000);
+}
+function clearClipWarn(){
+  const bar = document.getElementById('clipWarn');
+  if(bar) bar.style.display = 'none';
+  clearTimeout(clipWarnTimer);
+}
+
+function copyText(text, isSensitive){
+  if(!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    toast('已复制到剪贴板', 'success');
+    if(isSensitive) showClipWarn();
+    // #4 15秒后若剪贴板内容未变（仍是刚才复制的），才清除
+    setTimeout(async () => {
+      try{
+        const current = await navigator.clipboard.readText();
+        if(current === text){ navigator.clipboard.writeText(''); clearClipWarn(); }
+      }catch(e){ /* 无读取权限则跳过 */ }
+    }, 15000);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('已复制', 'success');
+    if(isSensitive) showClipWarn();
+  });
+}
+
+let toastTimer;
+function toast(msg, type){
+  const t = document.getElementById('toast');
+  t.innerHTML = escHtml(msg); // 普通 toast 用转义文本
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Warn before closing if in manual mode with unsaved changes
+window.addEventListener('beforeunload', (e) => {
+  if(fileMode === 'manual' && isDirty){
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
+// keyboard shortcut: Ctrl+L to lock
+document.addEventListener('keydown', e => {
+  if(e.ctrlKey && e.key === 'l' && document.getElementById('mainScreen').style.display !== 'none'){
+    e.preventDefault();
+    lockApp();
+  }
+});
+
+// Init
+window.addEventListener('DOMContentLoaded', () => {
+  showStartScreen();
+  initLastFileHint();
+});
+</script>
+</body>
+</html>
