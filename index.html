@@ -154,6 +154,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
   user-select:none;
   -webkit-user-select:none;
 }
+
+/* ========== Icon Picker ========== */
+.icon-picker-panel {
+  position:fixed; z-index:9999;
+  width:320px; max-height:360px; overflow-y:auto;
+  background:#fff; border:1px solid #e0e0e0; border-radius:10px;
+  box-shadow:0 8px 30px rgba(0,0,0,.15), 0 2px 8px rgba(0,0,0,.08);
+  padding:10px 12px;
+  animation:pickerFadeIn .15s ease-out;
+}
+@keyframes pickerFadeIn{ from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+.icon-pick-cat { font-size:11px; color:#888; font-weight:600; text-transform:uppercase; letter-spacing:.5px; padding:7px 4px 5px; margin-top:2px; }
+.icon-pick-cat:first-child{ margin-top:0; }
+.icon-pick-grid { display:flex; flex-wrap:wrap; gap:3px; }
+.icon-pick-item {
+  width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+  font-size:20px; cursor:pointer; border-radius:6px; border:none;
+  background:transparent; transition:background .12s, transform .1s;
+  -webkit-tap-highlight-color:transparent; line-height:1;
+}
+.icon-pick-item:hover { background:#e8f0fe; transform:scale(1.18); }
+.icon-pick-item.active { background:#d2e3fc; box-shadow:inset 0 0 0 2px #1a73e8; }
 </style>
 </head>
 <body>
@@ -371,43 +393,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
       <div style="font-size:12px;color:#888;margin-bottom:8px;font-weight:600">+ 新增分组</div>
       <div style="display:flex;gap:8px;align-items:stretch">
         <input type="text" id="newGroupName" placeholder="输入分组名称，如 TikTok Shop" style="flex:2;min-width:0;height:38px;padding:0 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box" maxlength="20">
-        <select id="newGroupIcon" style="width:56px;min-width:0;height:38px;padding:0 6px;border:1px solid #ddd;border-radius:6px;font-size:16px;background:#fff;cursor:pointer;box-sizing:border-box;text-align:center">
-          <option value="📁" selected>📁</option>
-          <optgroup label="颜色">
-          <option value="🟠">🟠</option><option value="🔴">🔴</option><option value="🔵">🔵</option>
-          <option value="🟢">🟢</option><option value="🟡">🟡</option><option value="🟣">🟣</option>
-          <option value="🟤">🟤</option><option value="⚫">⚫</option><option value="⚪">⚪</option>
-          </optgroup>
-          <optgroup label="电商/平台">
-          <option value="🛒">🛒</option><option value="🏪">🏪</option><option value="🏬">🏬</option>
-          <option value="💼">💼</option><option value="💰">💰</option><option value="💳">💳</option>
-          <option value="🏷️">🏷️</option><option value="🎁">🎁</option><option value="📦">📦</option>
-          <option value="📊">📊</option><option value="📈">📈</option>
-          </optgroup>
-          <optgroup label="科技/设备">
-          <option value="🌐">🌐</option><option value="💻">💻</option><option value="🖥️">🖥️</option>
-          <option value="📱">📱</option><option value="🔧">🔧</option><option value="⚙️">⚙️</option>
-          <option value="🔌">🔌</option><option value="🔋">🔋</option>
-          </optgroup>
-          <optgroup label="社交/通讯">
-          <option value="📧">📧</option><option value="💬">💬</option><option value="📨">📨</option>
-          <option value="📲">📲</option><option value="📢">📢</option><option value="🔔">🔔</option>
-          </optgroup>
-          <optgroup label="人物/组织">
-          <option value="👤">👤</option><option value="👥">👥</option><option value="🧑‍💼">🧑‍💼</option>
-          <option value="🏢">🏢</option>
-          </optgroup>
-          <optgroup label="物流/运输">
-          <option value="🚚">🚚</option><option value="✈️">✈️</option><option value="🚢">🚢</option>
-          <option value="📮">📮</option><option value="🗺️">🗺️</option>
-          </optgroup>
-          <optgroup label="安全/标记">
-          <option value="🔑">🔑</option><option value="🔒">🔒</option><option value="🔐">🔐</option>
-          <option value="🛡️">🛡️</option><option value="⭐">⭐</option><option value="🎯">🎯</option>
-          <option value="📌">📌</option><option value="🌟">🌟</option><option value="💡">💡</option>
-          <option value="🔥">🔥</option><option value="✅">✅</option>
-          </optgroup>
-        </select>
+        <div style="position:relative">
+          <input type="hidden" id="newGroupIcon" value="📁">
+          <button type="button" id="newGroupIconBtn" style="width:56px;min-width:0;height:38px;padding:0;border:1px solid #ddd;border-radius:6px;font-size:20px;background:#fff;cursor:pointer;box-sizing:border-box;display:flex;align-items:center;justify-content:center;line-height:1;transition:border-color .2s,box-shadow .2s" onclick="toggleIconPicker(this,'newGroupIcon')">📁</button>
+        </div>
         <button class="btn btn-primary" style="height:38px;padding:0 22px;font-size:13px;white-space:nowrap;border-radius:6px;line-height:1" onclick="addGroup()">添加</button>
       </div>
     </div>
@@ -975,8 +964,102 @@ function openGroupManager(){
   openModal('groupModal');
 }
 
-const ICON_OPTIONS = ['📁','🟠','🔴','🔵','🟢','🟡','🟣','🟤','⚫','⚪','🛒','🏪','🏬','💼','💰','💳','🏷️','🎁','📦','📊','📈','🌐','💻','🖥️','📱','🔧','⚙️','🔌','🔋','📧','💬','📨','📲','📢','🔔','👤','👥','🧑‍💼','🏢','🚚','✈️','🚢','📮','🗺️','🔑','🔒','🔐','🛡️','⭐','🎯','📌','🌟','💡','🔥','✅'];
-function iconOptionsHTML(sel){ return ICON_OPTIONS.map(ic=>`<option value="${ic}"${ic===sel?' selected':''}>${ic}</option>`).join(''); }
+const ICON_CATALOG = [
+  {label:'颜色', icons:['🟠','🔴','🔵','🟢','🟡','🟣','🟤','⚫','⚪','🩷','🤎','🤍']},
+  {label:'电商/平台', icons:['🛒','🏪','🏬','💼','💰','💳','🏷️','🎁','📦','📊','📈','🧾','🏷️','💵','🪙']},
+  {label:'科技/设备', icons:['🌐','💻','🖥️','📱','🔧','⚙️','🔌','🔋','⌨️','🖱️','🖨️','💾','🗄️','☁️','📡']},
+  {label:'社交/通讯', icons:['📧','💬','📨','📲','📢','🔔','✉️','📞','📱','💭','🗣️','👋','🤝']},
+  {label:'人物/组织', icons:['👤','👥','🧑‍💼','🏢','🏠','🏭','🏦','🏥','🎓','👩‍💻','👨‍💻']},
+  {label:'物流/运输', icons:['🚚','✈️','🚢','📮','🗺️','🚂','🚁','🛳️','🚕','🛴','📦','🏬']},
+  {label:'安全/标记', icons:['🔑','🔒','🔐','🛡️','⭐','🎯','📌','🌟','💡','🔥','✅','❌','⚠️','🚫','🔓']},
+  {label:'常用/其他', icons:['📁','📂','🗂️','📋','📝','🔖','🏷️','📌','🎨','🎮','🎵','🎬','🌍','🌏','🌎']}
+];
+
+let activeIconPicker = null;
+
+function toggleIconPicker(btn, inputId){
+  // close existing
+  if(activeIconPicker){ closeIconPicker(); if(activeIconPicker===btn) return; }
+  const current = document.getElementById(inputId).value;
+  const panel = document.createElement('div');
+  panel.className='icon-picker-panel';
+  panel.id='iconPickerPanel';
+  panel.innerHTML = ICON_CATALOG.map(cat => {
+    const items = cat.icons.map(ic =>
+      `<button type="button" class="icon-pick-item${ic===current?' active':''}" data-icon="${ic}">${ic}</button>`
+    ).join('');
+    return `<div class="icon-pick-cat">${cat.label}</div><div class="icon-pick-grid">${items}</div>`;
+  }).join('');
+  document.body.appendChild(panel);
+
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const pw = 320, gap = 4, minH = 180;
+  const rect = btn.getBoundingClientRect();
+  const availBelow = vh - rect.bottom - gap;
+  const availAbove = rect.top - gap;
+
+  // decide vertical direction
+  const openUp = availBelow < minH && availAbove > availBelow;
+
+  let maxH = openUp ? Math.min(360, availAbove) : Math.min(360, availBelow);
+  let left = rect.left;
+
+  // horizontal clamp
+  if(left + pw > vw - 8) left = vw - pw - 8;
+  if(left < 8) left = 8;
+
+  // set size first so we can measure
+  panel.style.position='fixed';
+  panel.style.left=left+'px';
+  panel.style.maxHeight=maxH+'px';
+
+  // now calculate final top
+  let top;
+  if(openUp){
+    // place so panel's bottom sits just above button
+    top = rect.top - gap - panel.offsetHeight;
+  } else {
+    top = rect.bottom + gap;
+  }
+  // final safety: never go off-screen vertically
+  if(top < 2) top = 2;
+  if(top + panel.offsetHeight > vh - 2) top = vh - 2 - panel.offsetHeight;
+  panel.style.top=top+'px';
+
+  btn.style.borderColor='#1a73e8'; btn.style.boxShadow='0 0 0 3px rgba(26,115,232,.15)';
+  activeIconPicker = btn;
+
+  panel.addEventListener('click', e => {
+    const item = e.target.closest('.icon-pick-item');
+    if(!item) return;
+    document.getElementById(inputId).value = item.dataset.icon;
+    btn.textContent = item.dataset.icon;
+    panel.querySelectorAll('.icon-pick-item').forEach(el => el.classList.remove('active'));
+    item.classList.add('active');
+    closeIconPicker();
+  });
+
+  setTimeout(() => {
+    document.addEventListener('click', handleIconPickerOutside, true);
+  }, 0);
+}
+
+function closeIconPicker(){
+  if(!activeIconPicker) return;
+  const panel = document.getElementById('iconPickerPanel');
+  if(panel) panel.remove();
+  activeIconPicker.style.borderColor=''; activeIconPicker.style.boxShadow='';
+  activeIconPicker = null;
+  document.removeEventListener('click', handleIconPickerOutside, true);
+}
+
+function handleIconPickerOutside(e){
+  if(!activeIconPicker) return;
+  const panel = document.getElementById('iconPickerPanel');
+  if(panel && !panel.contains(e.target) && !activeIconPicker.contains(e.target)){
+    closeIconPicker();
+  }
+}
 
 let editingIdx = -1;
 
@@ -990,7 +1073,10 @@ function renderGroupManager(){
     const count = vault.filter(e => e.group === g.name).length;
     if(editingIdx === i){
       return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #1a73e8;border-radius:4px;margin-bottom:6px;background:#f0f6ff">
-        <select id="editIcon_${i}" style="width:48px;min-width:0;height:34px;padding:0 4px;border:1px solid #ddd;border-radius:4px;font-size:15px;background:#fff;cursor:pointer;box-sizing:border-box;text-align:center">${iconOptionsHTML(g.icon||'📁')}</select>
+        <div style="position:relative">
+          <input type="hidden" id="editIcon_${i}" value="${escAttr(g.icon||'📁')}">
+          <button type="button" style="width:48px;min-width:0;height:34px;padding:0;border:1px solid #ddd;border-radius:4px;font-size:18px;background:#fff;cursor:pointer;box-sizing:border-box;display:flex;align-items:center;justify-content:center;line-height:1;transition:border-color .2s,box-shadow .2s" onclick="toggleIconPicker(this,'editIcon_${i}')">${g.icon||'📁'}</button>
+        </div>
         <input type="text" id="editName_${i}" value="${g.name.replace(/"/g,'&quot;')}" style="flex:1;min-width:0;height:34px;padding:0 10px;border:1px solid #ddd;border-radius:4px;font-size:13px;box-sizing:border-box" maxlength="20">
         <button class="btn btn-sm" style="height:34px;padding:0 14px;background:#1e8e3e;color:#fff;border:none;border-radius:4px;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap" onclick="saveEditGroup(${i})">保存</button>
         <button class="btn btn-ghost btn-sm" style="height:34px;padding:0 12px;font-size:12px;white-space:nowrap" onclick="cancelEditGroup()">取消</button>
