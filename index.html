@@ -173,7 +173,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
       <button class="btn btn-ghost" onclick="openVaultFile()">📂 打开其他密码文件</button>
       <button class="btn btn-ghost" onclick="newVaultFile()">📄 新建密码文件</button>
     </div>
-    <div id="fileStatus" class="file-name"></div>
     <div class="hint" style="margin-top:24px;text-align:left">
       <b>使用说明：</b><br>
       1. 首次使用点「新建密码文件」，选一个位置保存<br>
@@ -236,7 +235,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
       <button class="btn btn-ghost btn-sm" onclick="showAuditLog()">🕵️ 访问记录</button>
       <button class="btn btn-ghost btn-sm" onclick="exportBackup()">📤 另存备份</button>
       <button class="btn btn-ghost btn-sm" onclick="lockApp()">🔒 锁定</button>
-      <button class="btn btn-primary btn-sm" onclick="openAdd()">+ 添加</button>
+      <button class="btn btn-primary btn-sm" id="addBtn" onclick="openAdd()">+ 添加</button>
     </div>
   </div>
   <div class="layout">
@@ -363,13 +362,73 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
   </div>
 </div>
 
+<div class="modal-overlay" id="groupModal">
+  <div class="modal" style="max-width:480px">
+    <h2>📁 管理分组</h2>
+    <div class="hint" style="margin-bottom:12px">分组保存在密码文件中，换设备打开同一文件自动同步。</div>
+    <div id="groupManagerList" style="margin-bottom:16px"></div>
+    <div style="border-top:1px solid #eee;padding-top:14px;margin-bottom:12px">
+      <div style="font-size:12px;color:#888;margin-bottom:8px;font-weight:600">+ 新增分组</div>
+      <div style="display:flex;gap:8px;align-items:stretch">
+        <input type="text" id="newGroupName" placeholder="输入分组名称，如 TikTok Shop" style="flex:2;min-width:0;height:38px;padding:0 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box" maxlength="20">
+        <select id="newGroupIcon" style="width:56px;min-width:0;height:38px;padding:0 6px;border:1px solid #ddd;border-radius:6px;font-size:16px;background:#fff;cursor:pointer;box-sizing:border-box;text-align:center">
+          <option value="📁" selected>📁</option>
+          <optgroup label="颜色">
+          <option value="🟠">🟠</option><option value="🔴">🔴</option><option value="🔵">🔵</option>
+          <option value="🟢">🟢</option><option value="🟡">🟡</option><option value="🟣">🟣</option>
+          <option value="🟤">🟤</option><option value="⚫">⚫</option><option value="⚪">⚪</option>
+          </optgroup>
+          <optgroup label="电商/平台">
+          <option value="🛒">🛒</option><option value="🏪">🏪</option><option value="🏬">🏬</option>
+          <option value="💼">💼</option><option value="💰">💰</option><option value="💳">💳</option>
+          <option value="🏷️">🏷️</option><option value="🎁">🎁</option><option value="📦">📦</option>
+          <option value="📊">📊</option><option value="📈">📈</option>
+          </optgroup>
+          <optgroup label="科技/设备">
+          <option value="🌐">🌐</option><option value="💻">💻</option><option value="🖥️">🖥️</option>
+          <option value="📱">📱</option><option value="🔧">🔧</option><option value="⚙️">⚙️</option>
+          <option value="🔌">🔌</option><option value="🔋">🔋</option>
+          </optgroup>
+          <optgroup label="社交/通讯">
+          <option value="📧">📧</option><option value="💬">💬</option><option value="📨">📨</option>
+          <option value="📲">📲</option><option value="📢">📢</option><option value="🔔">🔔</option>
+          </optgroup>
+          <optgroup label="人物/组织">
+          <option value="👤">👤</option><option value="👥">👥</option><option value="🧑‍💼">🧑‍💼</option>
+          <option value="🏢">🏢</option>
+          </optgroup>
+          <optgroup label="物流/运输">
+          <option value="🚚">🚚</option><option value="✈️">✈️</option><option value="🚢">🚢</option>
+          <option value="📮">📮</option><option value="🗺️">🗺️</option>
+          </optgroup>
+          <optgroup label="安全/标记">
+          <option value="🔑">🔑</option><option value="🔒">🔒</option><option value="🔐">🔐</option>
+          <option value="🛡️">🛡️</option><option value="⭐">⭐</option><option value="🎯">🎯</option>
+          <option value="📌">📌</option><option value="🌟">🌟</option><option value="💡">💡</option>
+          <option value="🔥">🔥</option><option value="✅">✅</option>
+          </optgroup>
+        </select>
+        <button class="btn btn-primary" style="height:38px;padding:0 22px;font-size:13px;white-space:nowrap;border-radius:6px;line-height:1" onclick="addGroup()">添加</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <div id="lockCountdown"></div>
 
 <script>
 // ==================== Config ====================
-const GROUPS = ['拼多多','天猫/千牛','1688','阿里国际站','速卖通','其他'];
 const FILE_FORMAT_VERSION = 1;
+const DEFAULT_GROUPS = [
+  {name:'拼多多',icon:'🟠'},
+  {name:'天猫/千牛',icon:'🔴'},
+  {name:'1688',icon:'🟠'},
+  {name:'阿里国际站',icon:'🔵'},
+  {name:'速卖通',icon:'🔴'},
+  {name:'其他',icon:'⚪'}
+];
+let GROUPS_DATA = []; // loaded from vault file (encrypted), falls back to defaults
 // ==================== IndexedDB for persisting fileHandle ====================
 // File System Access API fileHandle can be stored in IndexedDB across page reloads.
 // On reload: restore handle → call requestPermission() (requires user gesture) → read file directly.
@@ -462,6 +521,7 @@ async function openLastFile(){
     const data = JSON.parse(text);
     if(!data.salt || !data.verify){ toast('不是有效的密码文件'); return; }
     if(!data.auditLog) data.auditLog = [];
+    if(!data.groups) data.groups = DEFAULT_GROUPS.map(g => ({...g}));
 
     fileHandle = savedHandle;
     vaultData = data;
@@ -474,11 +534,6 @@ async function openLastFile(){
     savedHandle = null;
     document.getElementById('lastFileHint').style.display = 'none';
   }
-}
-
-function saveLastFileName(name){
-  // kept for compatibility — actual persistence now via IDB handle
-  try{ localStorage.setItem('pm_last_file_name', name); }catch(e){}
 }
 
 // ==================== State ====================
@@ -622,14 +677,14 @@ async function openVaultFile(){
       toast('不是有效的密码文件');
       return;
     }
-    // 兼容旧文件（无 auditLog 字段）
+    // 兼容旧文件（无 auditLog / groups 字段）
     if(!data.auditLog) data.auditLog = [];
+    if(!data.groups) data.groups = DEFAULT_GROUPS.map(g => ({...g}));
 
     fileHandle = handle;
     vaultData = data;
     fileMode = 'fs';
     updateFileTag(handle.name);
-    saveLastFileName(handle.name);
     saveHandleToIDB(handle);
     showLoginScreen();
   }catch(e){
@@ -654,7 +709,6 @@ async function newVaultFile(){
     fileHandle = handle;
     fileMode = 'fs';
     updateFileTag(handle.name);
-    saveLastFileName(handle.name);
     saveHandleToIDB(handle);
     showSetupScreen();
   }catch(e){
@@ -680,6 +734,8 @@ function manualOpenFile(){
       const text = await file.text();
       const data = JSON.parse(text);
       if(!data.salt || !data.verify){ toast('不是有效的密码文件'); return; }
+      if(!data.auditLog) data.auditLog = [];
+      if(!data.groups) data.groups = DEFAULT_GROUPS.map(g => ({...g}));
       vaultData = data;
       fileMode = 'manual';
       updateFileTag(file.name + '（手动保存）');
@@ -699,6 +755,7 @@ async function saveToFile(){
     salt: vaultData.salt,
     verify: vaultData.verify,
     data: vaultData.data,
+    groups: vaultData.groups || [],
     auditLog: vaultData.auditLog || [],
     modified: new Date().toISOString()
   }, null, 2);
@@ -780,9 +837,12 @@ async function doSetup(){
     version: FILE_FORMAT_VERSION,
     salt: salt,
     verify: verify,
-    data: {ct:'', iv:''}
+    data: {ct:'', iv:''},
+    groups: [],
+    auditLog: []
   };
   vault = [];
+  GROUPS_DATA = [];
 
   await saveToFile();
   enterApp();
@@ -835,6 +895,9 @@ async function doLogin(){
 
   // 审计日志：记录本次解锁时间
   await appendAuditLog();
+
+  // 加载分组数据
+  GROUPS_DATA = vaultData.groups || [];
 
   enterApp();
 }
@@ -903,6 +966,146 @@ async function persist(){
   const enc2 = await encryptData(json, cryptoKey);
   vaultData.data = enc2;
   await saveToFile();
+  isDirty = false;
+}
+
+// ==================== Group Manager ====================
+function openGroupManager(){
+  renderGroupManager();
+  openModal('groupModal');
+}
+
+const ICON_OPTIONS = ['📁','🟠','🔴','🔵','🟢','🟡','🟣','🟤','⚫','⚪','🛒','🏪','🏬','💼','💰','💳','🏷️','🎁','📦','📊','📈','🌐','💻','🖥️','📱','🔧','⚙️','🔌','🔋','📧','💬','📨','📲','📢','🔔','👤','👥','🧑‍💼','🏢','🚚','✈️','🚢','📮','🗺️','🔑','🔒','🔐','🛡️','⭐','🎯','📌','🌟','💡','🔥','✅'];
+function iconOptionsHTML(sel){ return ICON_OPTIONS.map(ic=>`<option value="${ic}"${ic===sel?' selected':''}>${ic}</option>`).join(''); }
+
+let editingIdx = -1;
+
+function renderGroupManager(){
+  const container = document.getElementById('groupManagerList');
+  if(GROUPS_DATA.length === 0){
+    container.innerHTML = '<div style="color:#999;text-align:center;padding:20px">暂无分组</div>';
+    return;
+  }
+  container.innerHTML = GROUPS_DATA.map((g, i) => {
+    const count = vault.filter(e => e.group === g.name).length;
+    if(editingIdx === i){
+      return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #1a73e8;border-radius:4px;margin-bottom:6px;background:#f0f6ff">
+        <select id="editIcon_${i}" style="width:48px;min-width:0;height:34px;padding:0 4px;border:1px solid #ddd;border-radius:4px;font-size:15px;background:#fff;cursor:pointer;box-sizing:border-box;text-align:center">${iconOptionsHTML(g.icon||'📁')}</select>
+        <input type="text" id="editName_${i}" value="${g.name.replace(/"/g,'&quot;')}" style="flex:1;min-width:0;height:34px;padding:0 10px;border:1px solid #ddd;border-radius:4px;font-size:13px;box-sizing:border-box" maxlength="20">
+        <button class="btn btn-sm" style="height:34px;padding:0 14px;background:#1e8e3e;color:#fff;border:none;border-radius:4px;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap" onclick="saveEditGroup(${i})">保存</button>
+        <button class="btn btn-ghost btn-sm" style="height:34px;padding:0 12px;font-size:12px;white-space:nowrap" onclick="cancelEditGroup()">取消</button>
+      </div>`;
+    }
+    const isPending = pendingDeleteIdx === i;
+    const delBtn = isPending
+      ? `<button class="btn btn-sm" style="padding:3px 12px;background:#d93025;color:#fff;border:none;border-radius:4px;font-size:12px;cursor:pointer;font-weight:600" onclick="deleteGroup(${i})">确认删除？</button>`
+      : `<button class="btn btn-ghost btn-sm" style="padding:2px 8px;color:#d93025" onclick="deleteGroup(${i})">删除</button>`;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid ${isPending?'#d93025':'#eee'};border-radius:4px;margin-bottom:6px;${isPending?'background:#fef2f2':''}">
+      <span style="font-size:16px">${g.icon||'📁'}</span>
+      <span style="flex:1;font-size:13px;font-weight:500">${escHtml(g.name)}</span>
+      <span style="font-size:12px;color:#999">${count}条</span>
+      <button class="btn btn-ghost btn-sm" style="padding:2px 8px;color:#1a73e8" onclick="editGroup(${i})">编辑</button>
+      <button class="btn btn-ghost btn-sm" style="padding:2px 8px" onclick="moveGroup(${i},-1)" ${i===0?'disabled':''}>↑</button>
+      <button class="btn btn-ghost btn-sm" style="padding:2px 8px" onclick="moveGroup(${i},1)" ${i===GROUPS_DATA.length-1?'disabled':''}>↓</button>
+      ${delBtn}
+    </div>`;
+  }).join('');
+}
+
+function editGroup(idx){
+  pendingDeleteIdx = -1;
+  clearTimeout(pendingDeleteTimer);
+  editingIdx = idx;
+  renderGroupManager();
+  setTimeout(() => {
+    const inp = document.getElementById(`editName_${idx}`);
+    if(inp){ inp.focus(); inp.select(); }
+  }, 0);
+}
+
+function cancelEditGroup(){
+  editingIdx = -1;
+  renderGroupManager();
+}
+
+async function saveEditGroup(idx){
+  const g = GROUPS_DATA[idx];
+  if(!g) return;
+  const newName = document.getElementById(`editName_${idx}`).value.trim();
+  const newIcon = document.getElementById(`editIcon_${idx}`).value;
+  if(!newName){ toast('分组名称不能为空'); return; }
+  if(newName !== g.name && GROUPS_DATA.some(x => x.name === newName)){ toast('该分组已存在'); return; }
+  const oldName = g.name;
+  GROUPS_DATA[idx] = {name: newName, icon: newIcon};
+  if(newName !== oldName){
+    vault.forEach(e => { if(e.group === oldName) e.group = newName; });
+    if(currentGroup === oldName) currentGroup = newName;
+  }
+  vaultData.groups = GROUPS_DATA.map(x => ({...x}));
+  await saveToFile();
+  editingIdx = -1;
+  renderGroupManager();
+  renderSidebar();
+  renderEntries();
+  toast('分组已更新并保存', 'success');
+}
+
+async function addGroup(){
+  const name = document.getElementById('newGroupName').value.trim();
+  if(!name){ toast('分组名称不能为空'); return; }
+  if(GROUPS_DATA.some(g => g.name === name)){ toast('该分组已存在'); return; }
+  const icon = document.getElementById('newGroupIcon').value;
+  GROUPS_DATA.push({name, icon});
+  vaultData.groups = GROUPS_DATA.map(g => ({...g}));
+  await saveToFile();
+  document.getElementById('newGroupName').value = '';
+  renderGroupManager();
+  renderSidebar();
+  toast('分组已添加并保存', 'success');
+  closeModal('groupModal');
+}
+
+let pendingDeleteIdx = -1;
+let pendingDeleteTimer = null;
+
+async function deleteGroup(idx){
+  const g = GROUPS_DATA[idx];
+  if(!g) return;
+  const count = vault.filter(e => e.group === g.name).length;
+  if(count > 0){
+    toast(`该分组下有 ${count} 条账号，请先迁移或删除`);
+    return;
+  }
+  if(pendingDeleteIdx !== idx){
+    pendingDeleteIdx = idx;
+    renderGroupManager();
+    clearTimeout(pendingDeleteTimer);
+    pendingDeleteTimer = setTimeout(() => {
+      pendingDeleteIdx = -1;
+      renderGroupManager();
+    }, 3000);
+    return;
+  }
+  clearTimeout(pendingDeleteTimer);
+  pendingDeleteIdx = -1;
+  GROUPS_DATA.splice(idx, 1);
+  vaultData.groups = GROUPS_DATA.map(g => ({...g}));
+  await saveToFile();
+  renderGroupManager();
+  renderSidebar();
+  toast('分组已删除并保存', 'success');
+}
+
+async function moveGroup(idx, dir){
+  const newIdx = idx + dir;
+  if(newIdx < 0 || newIdx >= GROUPS_DATA.length) return;
+  const tmp = GROUPS_DATA[idx];
+  GROUPS_DATA[idx] = GROUPS_DATA[newIdx];
+  GROUPS_DATA[newIdx] = tmp;
+  vaultData.groups = GROUPS_DATA.map(g => ({...g}));
+  await saveToFile();
+  renderGroupManager();
+  renderSidebar();
 }
 
 // ==================== Sidebar ====================
@@ -910,21 +1113,43 @@ function renderSidebar(){
   const sb = document.getElementById('sidebar');
   const counts = {};
   counts['全部'] = vault.length;
-  GROUPS.forEach(g => counts[g] = vault.filter(e => e.group === g).length);
+  GROUPS_DATA.forEach(g => counts[g.name] = vault.filter(e => e.group === g.name).length);
 
   let html = `<div class="grp ${currentGroup==='全部'?'active':''}" onclick="selectGroup('全部')"><span>📋 全部</span><span class="count">${counts['全部']}</span></div>`;
   html += '<div class="divider"></div>';
-  GROUPS.forEach(g => {
-    html += `<div class="grp ${currentGroup===g?'active':''}" onclick="selectGroup('${g}')"><span>${getGrpIcon(g)} ${g}</span><span class="count">${counts[g]||0}</span></div>`;
-  });
+  if(GROUPS_DATA.length === 0){
+    html += `<div style="margin:6px 10px;padding:8px 10px;border:1px dashed #d93025;border-radius:6px;background:#fef5f5;text-align:center;cursor:pointer" onclick="openGroupManager()">
+      <div style="font-size:16px;margin-bottom:2px">📁</div>
+      <div style="font-size:12px;color:#d93025;font-weight:500;line-height:1.4">还没有分组 · 点击添加</div>
+    </div>`;
+  } else {
+    GROUPS_DATA.forEach(g => {
+      html += `<div class="grp ${currentGroup===g.name?'active':''}" onclick="selectGroup('${escAttr(g.name)}')"><span>${g.icon||'📁'} ${escHtml(g.name)}</span><span class="count">${counts[g.name]||0}</span></div>`;
+    });
+  }
   html += '<div class="divider"></div>';
+  html += `<div class="grp" onclick="openGroupManager()"><span>📁 管理分组</span></div>`;
   html += `<div class="grp" onclick="openModal('pwModal')"><span>🔑 修改主密码</span></div>`;
+  const addBtn = document.getElementById('addBtn');
+  if(addBtn){
+    if(GROUPS_DATA.length === 0){
+      addBtn.disabled = true;
+      addBtn.style.opacity = '0.45';
+      addBtn.style.cursor = 'not-allowed';
+      addBtn.title = '请先创建分组';
+    }else{
+      addBtn.disabled = false;
+      addBtn.style.opacity = '';
+      addBtn.style.cursor = '';
+      addBtn.title = '';
+    }
+  }
   sb.innerHTML = html;
 }
 
 function getGrpIcon(g){
-  const m = {'拼多多':'🟠','天猫/千牛':'🔴','1688':'🟠','阿里国际站':'🔵','速卖通':'🔴','其他':'⚪'};
-  return m[g] || '📁';
+  const found = GROUPS_DATA.find(x => x.name === g);
+  return found ? (found.icon || '📁') : '📁';
 }
 
 function selectGroup(g){
@@ -957,7 +1182,7 @@ function renderEntries(){
         <button class="btn btn-ghost btn-sm" onclick="openEdit('${e.id}')">编辑</button>
         <button class="btn btn-ghost btn-sm" onclick="deleteEntry('${e.id}')">删除</button>
       </div>
-      <div class="grp-tag">${getGrpIcon(e.group||'其他')} ${e.group||'其他'}</div>
+      <div class="grp-tag">${getGrpIcon(e.group||'其他')} ${escHtml(e.group||'其他')}</div>
       <div class="platform">${escHtml(e.platform||'')}</div>
       <div class="field"><span class="lbl">账号</span><span class="val" title="${escAttr(e.user||'')}">${escHtml(e.user||'—')}</span><span class="copy" onclick="copyText('${escAttr(e.user||'')}')">复制</span></div>
       <div class="field"><span class="lbl">密码</span><span class="val pw-val" id="pw_${e.id}">••••••••</span><span class="eye" onclick="toggleEntryPw('${e.id}',this)">👁</span><span class="copy" onclick="copyEntryPw('${e.id}')">复制</span></div>
@@ -1042,7 +1267,7 @@ function openEdit(id){
 
 function fillGroupSelect(selected){
   const sel = document.getElementById('entryGroup');
-  sel.innerHTML = GROUPS.map(g => `<option value="${g}" ${g===selected?'selected':''}>${g}</option>`).join('');
+  sel.innerHTML = GROUPS_DATA.map(g => `<option value="${escAttr(g.name)}" ${g.name===selected?'selected':''}>${g.icon||'📁'} ${escHtml(g.name)}</option>`).join('');
 }
 
 async function saveEntry(){
@@ -1174,6 +1399,7 @@ async function exportBackup(){
     salt: vaultData.salt,
     verify: vaultData.verify,
     data: vaultData.data,
+    groups: vaultData.groups || [],
     auditLog: vaultData.auditLog || [],
     modified: new Date().toISOString(),
     backup: true
@@ -1304,7 +1530,6 @@ document.addEventListener('keydown', e => {
 // Init
 window.addEventListener('DOMContentLoaded', () => {
   showStartScreen();
-  initLastFileHint();
 });
 </script>
 </body>
