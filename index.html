@@ -13,6 +13,23 @@
 }
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
 
+/* Dark theme */
+html[data-theme="dark"]{--bg:#1a1a2e;--card:#16213e;--border:#2a2a4a;--text:#e0e0e0;--text2:#999;--shadow:0 1px 3px rgba(0,0,0,.4);--shadow2:0 4px 12px rgba(0,0,0,.6)}
+html[data-theme="dark"] input,html[data-theme="dark"] select,html[data-theme="dark"] textarea{background:#0f3460;color:var(--text);border-color:var(--border)}
+html[data-theme="dark"] .side-search input{background:#0f3460}
+html[data-theme="dark"] .btn-ghost:hover{background:#0f3460}
+html[data-theme="dark"] .sidebar .grp:hover{background:#0f3460}
+html[data-theme="dark"] .sidebar .grp.active{background:rgba(217,48,37,.2)}
+html[data-theme="dark"] .sidebar .grp .count{background:#2a2a4a;color:#aaa}
+html[data-theme="dark"] .entry-card .grp-tag{background:#0f3460}
+html[data-theme="dark"] .file-tag{background:rgba(30,142,62,.2)}
+html[data-theme="dark"] .modal input,html[data-theme="dark"] .modal select,html[data-theme="dark"] .modal textarea{background:#0f3460;color:var(--text)}
+html[data-theme="dark"] #lockCountdown{color:#666}
+html[data-theme="dark"] .start-box,html[data-theme="dark"] .login-box{box-shadow:0 4px 24px rgba(0,0,0,.5)}
+html[data-theme="dark"] .strength{background:#2a2a4a}
+html[data-theme="dark"] .stats-panel{border-color:var(--border)}
+html[data-theme="dark"] .stats-panel .stat-val{color:#ccc}
+
 /* ===== Start Screen ===== */
 #startScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
 .start-box{background:var(--card);border-radius:var(--radius);padding:40px;width:100%;max-width:420px;box-shadow:var(--shadow2);text-align:center}
@@ -48,11 +65,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .topbar{display:flex;align-items:center;gap:12px;padding:10px 20px;background:var(--card);border-bottom:1px solid var(--border);box-shadow:var(--shadow)}
 .topbar .title{font-size:16px;font-weight:600;flex-shrink:0}
 .topbar .file-tag{font-size:11px;color:var(--success);background:#e6f4ea;padding:3px 8px;border-radius:4px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
-.topbar .search{flex:1;max-width:400px;position:relative}
-.topbar .search input{width:100%;padding:7px 12px 7px 34px;border:1px solid var(--border);border-radius:6px;font-size:13px;outline:none}
-.topbar .search input:focus{border-color:var(--primary)}
-.topbar .search .icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:14px}
-.topbar .actions{display:flex;gap:8px;align-items:center}
+.topbar .actions{display:flex;gap:8px;align-items:center;margin-left:auto}
+.topbar .actions .btn-sm{height:30px;padding:4px 12px;display:inline-flex;align-items:center}
+.more-wrap{position:relative}
+.more-item{display:block;width:100%;text-align:left;padding:8px 16px;border:none;background:none;font-size:13px;cursor:pointer;white-space:nowrap;font-family:inherit;color:var(--text)}
+.more-item:hover{background:#f5f5f5}
+html[data-theme="dark"] .more-item:hover{background:#0f3460}
 
 .layout{display:flex;height:calc(100vh - 50px)}
 .sidebar{width:200px;background:var(--card);border-right:1px solid var(--border);padding:12px 0;overflow-y:auto;flex-shrink:0}
@@ -62,11 +80,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .sidebar .grp .count{background:#e0e0e0;color:#666;border-radius:10px;padding:1px 8px;font-size:11px;min-width:20px;text-align:center}
 .sidebar .grp.active .count{background:var(--primary);color:#fff}
 .sidebar .divider{height:1px;background:var(--border);margin:8px 12px}
+.side-search{position:relative;padding:4px 12px;margin-bottom:4px}
+.side-search input{width:100%;height:32px;padding:0 10px 0 28px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;background:var(--bg);color:var(--text)}
+.side-search input:focus{border-color:var(--primary)}
+
+/* Stats panel */
+.stats-panel{padding:8px 16px;font-size:11px;color:var(--text2);border-top:1px solid var(--border)}
+.stats-panel .stat-row{display:flex;justify-content:space-between;padding:3px 0}
+.stats-panel .stat-val{font-weight:500;color:var(--text)}
 
 .content{flex:1;overflow-y:auto;padding:16px}
 .entry-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
-.entry-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);transition:box-shadow .2s;position:relative}
-.entry-card:hover{box-shadow:var(--shadow2)}
+.entry-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);transition:box-shadow .2s, transform .2s;position:relative}
+.entry-card:hover{box-shadow:var(--shadow2);transform:translateY(-2px)}
 .entry-card .grp-tag{display:inline-block;font-size:11px;color:var(--text2);background:#f0f0f0;padding:2px 8px;border-radius:4px;margin-bottom:8px}
 .entry-card .platform{font-size:15px;font-weight:600;margin-bottom:10px;padding-right:60px}
 .entry-card .field{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px}
@@ -76,32 +102,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .entry-card .field .copy{cursor:pointer;color:var(--primary);font-size:12px;flex-shrink:0;user-select:none}
 .entry-card .field .copy:hover{text-decoration:underline}
 .entry-card .field .eye{cursor:pointer;color:var(--text2);flex-shrink:0;user-select:none}
-.entry-card .card-actions{position:absolute;top:12px;right:12px;display:flex;gap:6px}
+.entry-card .card-actions{position:absolute;top:12px;right:12px;display:flex;gap:6px;z-index:1}
 .entry-card .card-actions .btn-sm{padding:3px 8px}
 .empty{text-align:center;padding:60px 20px;color:var(--text2)}
 .empty .big{font-size:40px;margin-bottom:12px}
 
 /* ===== Modal ===== */
-.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center}
-.modal-overlay.show{display:flex}
-.modal{background:var(--card);border-radius:var(--radius);padding:24px;width:90%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow2)}
-.modal h2{font-size:17px;margin-bottom:18px}
+.modal-overlay{display:flex;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center;visibility:hidden;opacity:0;transition:opacity .2s, visibility .2s;pointer-events:none}
+.modal-overlay.show{visibility:visible;opacity:1;pointer-events:auto}
+.modal-overlay.show .modal{animation:modalSlideIn .25s ease-out}
+@keyframes modalSlideIn{from{opacity:0;transform:translateY(-20px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.modal{background:var(--card);border-radius:var(--radius);width:90%;max-width:480px;max-height:88vh;box-shadow:var(--shadow2);display:flex;flex-direction:column;overflow:hidden;scrollbar-width:none}
+.modal::-webkit-scrollbar{display:none}
+.modal>.modal-head{padding:24px 24px 12px;flex-shrink:0}
+.modal>.modal-body{padding:0 24px 12px;overflow-y:auto;flex:1;scrollbar-width:none}
+.modal>.modal-body::-webkit-scrollbar{display:none}
+.modal>.modal-foot{padding:12px 24px 24px;flex-shrink:0}
+.modal h2{font-size:17px;margin:0}
 .modal .form-group{margin-bottom:14px}
 .modal label{display:block;margin-bottom:5px;font-weight:500;font-size:13px}
 .modal input,.modal select,.modal textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;outline:none;font-family:inherit;transition:border .2s}
 .modal input:focus,.modal select:focus,.modal textarea:focus{border-color:var(--primary)}
 .modal textarea{resize:vertical;min-height:60px}
-.modal .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.modal .modal-actions{display:flex;gap:8px;justify-content:flex-end}
 .modal .gen-row{display:flex;gap:8px;align-items:center}
 .modal .gen-row input{flex:1}
-.modal .strength{height:4px;border-radius:2px;margin-top:6px;transition:background .3s}
+.modal .strength{height:4px;border-radius:2px;margin-top:6px;transition:background .3s, width .3s}
 
 /* ===== Password Generator ===== */
-.gen-options{display:flex;flex-direction:column;gap:8px;margin:12px 0}
-.gen-options label{display:flex;align-items:center;gap:8px;font-weight:normal;cursor:pointer}
 .gen-options input[type=checkbox]{width:auto}
-.gen-length{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.gen-length input[type=range]{flex:1}
 
 /* ===== Toast ===== */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:#333;color:#fff;padding:10px 24px;border-radius:6px;font-size:13px;transition:transform .3s;z-index:2000;pointer-events:auto}
@@ -131,8 +160,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
   letter-spacing:0.02em;
   transition:color .5s;
 }
-
-.hidden{display:none!important}
 
 /* ===== Security: clipboard warning bar ===== */
 #clipWarn{
@@ -248,16 +275,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
   <div class="topbar">
     <span class="title">🔐 密码管理器</span>
     <span class="file-tag" id="fileTag" title="">📁 未绑定文件</span>
-    <div class="search">
-      <span class="icon">🔍</span>
-      <input type="text" id="searchInput" placeholder="搜索平台名/账号..." oninput="renderEntries()">
-    </div>
     <div class="actions">
-      <button class="btn btn-ghost btn-sm" onclick="openGenerator()">🎲 生成密码</button>
-      <button class="btn btn-ghost btn-sm" onclick="showAuditLog()">🕵️ 访问记录</button>
-      <button class="btn btn-ghost btn-sm" onclick="exportBackup()">📤 另存备份</button>
-      <button class="btn btn-ghost btn-sm" onclick="lockApp()">🔒 锁定</button>
       <button class="btn btn-primary btn-sm" id="addBtn" onclick="openAdd()">+ 添加</button>
+      <div class="more-wrap">
+        <button class="btn btn-ghost btn-sm" id="moreBtn" onclick="toggleMoreMenu(event)" title="更多">☰</button>
+        <div class="more-drop" id="moreDrop" style="display:none;position:absolute;top:100%;right:0;margin-top:4px;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow2);z-index:200;min-width:150px;padding:4px 0">
+          <button class="more-item" onclick="openGenerator();closeMoreMenu()">🎲 生成密码</button>
+          <button class="more-item" onclick="showAuditLog();closeMoreMenu()">🕵️ 访问记录</button>
+          <button class="more-item" onclick="exportBackup();closeMoreMenu()">📤 另存备份</button>
+          <button class="more-item" onclick="lockApp();closeMoreMenu()">🔒 锁定</button>
+          <button class="more-item" onclick="toggleTheme();closeMoreMenu()">🌗 切换主题</button>
+        </div>
+      </div>
     </div>
   </div>
   <div class="layout">
@@ -269,103 +298,215 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 <!-- ===== Add/Edit Modal ===== -->
 <div class="modal-overlay" id="entryModal">
   <div class="modal">
-    <h2 id="modalTitle">添加账号</h2>
-    <input type="hidden" id="editId">
-    <div class="form-group">
-      <label>分组</label>
-      <select id="entryGroup"></select>
+    <div class="modal-head">
+      <h2 id="modalTitle">添加账号</h2>
+      <input type="hidden" id="editId">
     </div>
-    <div class="form-group">
-      <label>平台名称 *</label>
-      <input type="text" id="entryPlatform" placeholder="如：拼多多主店">
-    </div>
-    <div class="form-group">
-      <label>账号/手机号</label>
-      <input type="text" id="entryUser" placeholder="登录账号">
-    </div>
-    <div class="form-group">
-      <label>密码</label>
-      <div class="gen-row">
-        <div class="pw-wrap" style="flex:1">
-          <input type="password" id="entryPw" placeholder="密码" oninput="checkStrength(this.value)">
-          <span class="toggle" onclick="togglePw('entryPw',this)">显示</span>
-        </div>
-        <button class="btn btn-ghost btn-sm" type="button" onclick="fillGenerated()">🎲</button>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>分组</label>
+        <select id="entryGroup"></select>
       </div>
-      <div class="strength" id="strengthBar"></div>
+      <div class="form-group">
+        <label>平台名称 *</label>
+        <input type="text" id="entryPlatform" placeholder="如：拼多多主店">
+      </div>
+      <div class="form-group">
+        <label>账号/手机号</label>
+        <input type="text" id="entryUser" placeholder="登录账号">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <div class="gen-row">
+          <div class="pw-wrap" style="flex:1">
+            <input type="password" id="entryPw" placeholder="密码" oninput="checkStrength(this.value)">
+            <span class="toggle" onclick="togglePw('entryPw',this)">显示</span>
+          </div>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="fillGenerated()">🎲</button>
+        </div>
+        <div class="strength" id="strengthBar"></div>
+      </div>
+      <div class="form-group">
+        <label>网址</label>
+        <input type="text" id="entryUrl" placeholder="https://...">
+      </div>
+      <div class="form-group">
+        <label>备注</label>
+        <textarea id="entryNote" placeholder="安全问题答案、备用码、子账号等..."></textarea>
+      </div>
     </div>
-    <div class="form-group">
-      <label>网址</label>
-      <input type="text" id="entryUrl" placeholder="https://...">
-    </div>
-    <div class="form-group">
-      <label>备注</label>
-      <textarea id="entryNote" placeholder="安全问题答案、备用码、子账号等..."></textarea>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal('entryModal')">取消</button>
-      <button class="btn btn-primary" onclick="saveEntry()">保存</button>
+    <div class="modal-foot">
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal('entryModal')">取消</button>
+        <button class="btn btn-primary" onclick="saveEntry()">保存</button>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- ===== Generator Modal ===== -->
+<!-- ===== Generator & Hash Modal ===== -->
 <div class="modal-overlay" id="genModal">
   <div class="modal">
-    <h2>🎲 密码生成器</h2>
-    <div class="gen-length">
-      <span style="font-size:13px">长度</span>
-      <input type="range" id="genLen" min="8" max="32" value="16" oninput="document.getElementById('genLenVal').textContent=this.value;generatePw()">
-      <span id="genLenVal" style="font-size:13px;min-width:24px;text-align:center">16</span>
+    <div class="modal-head" style="padding-bottom:4px">
+      <h2>🔐 密码工具</h2>
     </div>
-    <div class="gen-options">
-      <label><input type="checkbox" id="genUpper" checked onchange="generatePw()"> 大写字母 A-Z</label>
-      <label><input type="checkbox" id="genLower" checked onchange="generatePw()"> 小写字母 a-z</label>
-      <label><input type="checkbox" id="genNum" checked onchange="generatePw()"> 数字 0-9</label>
-      <label><input type="checkbox" id="genSym" checked onchange="generatePw()"> 特殊符号 !@#$%...</label>
-    </div>
-    <div class="form-group">
-      <div class="pw-wrap">
-        <input type="text" id="genResult" readonly style="font-family:Consolas,Monaco,monospace;font-size:15px">
-        <span class="toggle" onclick="copyText(document.getElementById('genResult').value)">复制</span>
+    <div class="modal-body" style="padding-top:0">
+      <!-- Tabs -->
+      <div class="tool-tabs">
+        <button class="tool-tab active" onclick="switchGenTab('pw')" id="tabPw">🎲 密码生成</button>
+        <button class="tool-tab" onclick="switchGenTab('hash')" id="tabHash"># 哈希加密</button>
       </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="generatePw()">🔄 重新生成</button>
-      <button class="btn btn-primary" onclick="copyText(document.getElementById('genResult').value);closeModal('genModal')">复制并关闭</button>
+
+      <!-- Password Generator Panel -->
+      <div id="genPwPanel">
+        <div class="tool-section section-slider">
+          <div class="tool-label">密码长度 <span id="genLenVal" class="tool-val">16</span></div>
+          <div class="custom-slider" id="customSlider" data-min="8" data-max="100" data-value="16">
+            <div class="cs-track">
+              <div class="cs-fill" id="csFill"></div>
+            </div>
+            <div class="cs-thumb" id="csThumb"></div>
+          </div>
+        </div>
+        <div class="tool-section">
+          <div class="tool-label" style="margin-bottom:8px">字符类型</div>
+          <div class="char-toggles">
+            <label class="char-toggle active"><input type="checkbox" id="genUpper" checked onchange="generatePw();this.parentElement.classList.toggle('active',this.checked)"><span>A-Z</span></label>
+            <label class="char-toggle active"><input type="checkbox" id="genLower" checked onchange="generatePw();this.parentElement.classList.toggle('active',this.checked)"><span>a-z</span></label>
+            <label class="char-toggle active"><input type="checkbox" id="genNum" checked onchange="generatePw();this.parentElement.classList.toggle('active',this.checked)"><span>0-9</span></label>
+            <label class="char-toggle active"><input type="checkbox" id="genSym" checked onchange="generatePw();this.parentElement.classList.toggle('active',this.checked)"><span>!@#</span></label>
+          </div>
+        </div>
+        <div class="tool-section" style="margin-bottom:0">
+          <div class="tool-label" id="genPwLabel">已生成 16 位随机密码</div>
+          <div class="tool-result-box">
+            <input type="text" id="genResult" readonly onclick="this.select()" placeholder="拖动滑块生成密码...">
+            <button class="tool-copy-btn" onclick="copyText(document.getElementById('genResult').value)">📋</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hash Panel -->
+      <div id="genHashPanel" style="display:none">
+        <div class="tool-section">
+          <div class="tool-label">算法选择</div>
+          <div class="algo-grid">
+            <button class="algo-btn active" data-algo="SHA-256" onclick="setHashAlgo('SHA-256')">SHA-256</button>
+            <button class="algo-btn" data-algo="SHA-512" onclick="setHashAlgo('SHA-512')">SHA-512</button>
+            <button class="algo-btn" data-algo="SHA-1" onclick="setHashAlgo('SHA-1')">SHA-1</button>
+            <button class="algo-btn" data-algo="MD5" onclick="setHashAlgo('MD5')">MD5</button>
+          </div>
+        </div>
+        <div class="tool-section">
+          <textarea id="hashInput" rows="3" placeholder="输入要加密的文本..." oninput="computeHash()"></textarea>
+        </div>
+        <div class="tool-section" style="margin-bottom:0">
+          <div class="tool-label">计算结果 <span style="font-size:11px;color:var(--text2);font-weight:400" id="hashAlgoLabel">SHA-256</span></div>
+          <div class="tool-result-box">
+            <input type="text" id="hashResult" readonly onclick="this.select()" placeholder="输入文本后自动计算...">
+            <button class="tool-copy-btn" onclick="copyText(document.getElementById('hashResult').value)">📋</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
+
+<style>
+/* Tool tabs */
+.tool-tabs{display:flex;gap:0;margin-bottom:16px;background:var(--bg);border-radius:8px;padding:3px}
+.tool-tab{flex:1;padding:8px 0;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border-radius:6px;transition:all .2s;font-family:inherit}
+.tool-tab.active{background:var(--card);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+html[data-theme="dark"] .tool-tabs{background:#0f3460}
+html[data-theme="dark"] .tool-tab.active{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.4)}
+
+/* Tool sections */
+.tool-section{margin-bottom:14px}
+.tool-label{font-size:12px;color:var(--text2);font-weight:500;margin-bottom:6px}
+.tool-val{font-size:15px;font-weight:700;color:var(--primary);margin-left:4px}
+/* Slider (refined, password length) */
+.section-slider{margin-bottom:18px}
+.custom-slider{position:relative;height:44px;display:flex;align-items:center;cursor:pointer;margin:4px 0;-webkit-user-select:none;user-select:none;touch-action:none}
+.cs-track{position:absolute;left:14px;right:14px;height:6px;background:var(--border);border-radius:3px}
+.cs-fill{height:100%;background:var(--primary);border-radius:3px}
+.cs-thumb{position:absolute;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.12);left:0;top:50%;transform:translate(-14px,-50%);z-index:1;transition:box-shadow .15s}
+.cs-thumb:hover{box-shadow:0 3px 10px rgba(0,0,0,.18)}
+.cs-thumb:active{box-shadow:0 1px 4px rgba(0,0,0,.1)}
+html[data-theme="dark"] .cs-track{background:#3a3a5a}
+html[data-theme="dark"] .cs-thumb{background:#f0f0f0;box-shadow:0 2px 8px rgba(0,0,0,.5)}
+
+/* Char toggles */
+.char-toggles{display:flex;gap:6px}
+.char-toggle{padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:Consolas,Monaco,monospace;font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:0;background:var(--card)}
+.char-toggle input{display:none}
+.char-toggle:hover{border-color:var(--primary);color:var(--primary)}
+.char-toggle.active{border-color:var(--primary);background:rgba(217,48,37,.08);color:var(--primary)}
+html[data-theme="dark"] .char-toggle{background:#0f3460}
+html[data-theme="dark"] .char-toggle.active{background:rgba(217,48,37,.2)}
+
+/* Result box */
+.tool-result-box{display:flex;align-items:center;gap:0;background:var(--bg);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .2s}
+.tool-result-box:focus-within{border-color:var(--primary)}
+.tool-result-box input{flex:1;border:none!important;background:transparent!important;font-family:Consolas,Monaco,monospace;font-size:15px;padding:10px 14px!important;outline:none;color:var(--text);min-width:0}
+.tool-copy-btn{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border:none;border-radius:8px;background:var(--primary);color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;margin:4px;transition:all .15s}
+.tool-copy-btn:hover{background:var(--primary-h);transform:scale(1.05)}
+.tool-copy-btn:active{transform:scale(.92)}
+html[data-theme="dark"] .tool-result-box{background:#0f3460;border-color:#2a2a4a}
+
+/* Tool actions row */
+.tool-actions{display:flex;gap:8px;margin-top:16px}
+.tool-actions .btn{flex:1;justify-content:center;padding:10px 0;font-weight:500;border-radius:8px}
+.tool-actions .btn{flex:1;justify-content:center}
+
+/* Algorithm grid */
+.algo-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.algo-btn{padding:9px 8px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);font-size:12px;font-family:Consolas,Monaco,monospace;cursor:pointer;transition:all .15s;color:var(--text);font-weight:600;letter-spacing:.5px}
+.algo-btn:hover{border-color:var(--primary);color:var(--primary)}
+.algo-btn.active{border-color:var(--primary);background:var(--primary);color:#fff}
+html[data-theme="dark"] .algo-btn{background:#0f3460}
+html[data-theme="dark"] .algo-btn.active{background:var(--primary)}
+
+/* Hash textarea */
+#hashInput{width:100%;resize:none;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:Consolas,Monaco,monospace;font-size:13px;outline:none;color:var(--text);background:var(--card);transition:border-color .2s;box-sizing:border-box}
+#hashInput:focus,#hashInput:hover{border-color:var(--primary)}
+html[data-theme="dark"] #hashInput{background:#0f3460;border-color:#2a2a4a}
+</style>
 
 <!-- ===== Change Password Modal ===== -->
 <div class="modal-overlay" id="pwModal">
   <div class="modal">
-    <h2>修改主密码</h2>
-    <div class="hint" style="margin-bottom:16px;color:var(--primary)">修改后会重新加密所有数据并自动保存到文件。请确保新密码记牢。</div>
-    <div class="form-group">
-      <label>当前主密码</label>
-      <div class="pw-wrap">
-        <input type="password" id="oldPw" placeholder="当前密码">
-        <span class="toggle" onclick="togglePw('oldPw',this)">显示</span>
+    <div class="modal-head">
+      <h2>修改主密码</h2>
+      <div class="hint" style="margin-top:6px;color:var(--primary)">修改后会重新加密所有数据并自动保存到文件。请确保新密码记牢。</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>当前主密码</label>
+        <div class="pw-wrap">
+          <input type="password" id="oldPw" placeholder="当前密码">
+          <span class="toggle" onclick="togglePw('oldPw',this)">显示</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>新主密码</label>
+        <div class="pw-wrap">
+          <input type="password" id="newPw1" placeholder="至少6位">
+          <span class="toggle" onclick="togglePw('newPw1',this)">显示</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>确认新主密码</label>
+        <div class="pw-wrap">
+          <input type="password" id="newPw2" placeholder="再输一遍">
+          <span class="toggle" onclick="togglePw('newPw2',this)">显示</span>
+        </div>
       </div>
     </div>
-    <div class="form-group">
-      <label>新主密码</label>
-      <div class="pw-wrap">
-        <input type="password" id="newPw1" placeholder="至少6位">
-        <span class="toggle" onclick="togglePw('newPw1',this)">显示</span>
+    <div class="modal-foot">
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal('pwModal')">取消</button>
+        <button class="btn btn-primary" onclick="changeMasterPw()">确认修改</button>
       </div>
-    </div>
-    <div class="form-group">
-      <label>确认新主密码</label>
-      <div class="pw-wrap">
-        <input type="password" id="newPw2" placeholder="再输一遍">
-        <span class="toggle" onclick="togglePw('newPw2',this)">显示</span>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal('pwModal')">取消</button>
-      <button class="btn btn-primary" onclick="changeMasterPw()">确认修改</button>
     </div>
   </div>
 </div>
@@ -375,29 +516,60 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 <!-- ===== Audit Log Modal ===== -->
 <div class="modal-overlay" id="auditModal">
   <div class="modal" style="max-width:520px">
-    <h2>🕵️ 访问记录</h2>
-    <div class="hint" style="margin-bottom:8px">记录最近20次成功解锁的时间，保存在密码文件中。</div>
-    <div class="log-list" id="auditList"></div>
-    <div class="modal-actions" style="margin-top:16px">
-      <button class="btn btn-ghost" onclick="closeModal('auditModal')">关闭</button>
+    <div class="modal-head">
+      <h2>🕵️ 访问记录</h2>
+      <div class="hint" style="margin-top:4px">记录最近20次成功解锁的时间，保存在密码文件中。</div>
+    </div>
+    <div class="modal-body">
+      <div class="log-list" id="auditList"></div>
+    </div>
+    <div class="modal-foot">
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal('auditModal')">关闭</button>
+      </div>
     </div>
   </div>
 </div>
 
 <div class="modal-overlay" id="groupModal">
   <div class="modal" style="max-width:480px">
-    <h2>📁 管理分组</h2>
-    <div class="hint" style="margin-bottom:12px">分组保存在密码文件中，换设备打开同一文件自动同步。</div>
-    <div id="groupManagerList" style="margin-bottom:16px"></div>
-    <div style="border-top:1px solid #eee;padding-top:14px;margin-bottom:12px">
-      <div style="font-size:12px;color:#888;margin-bottom:8px;font-weight:600">+ 新增分组</div>
-      <div style="display:flex;gap:8px;align-items:stretch">
-        <input type="text" id="newGroupName" placeholder="输入分组名称，如 TikTok Shop" style="flex:2;min-width:0;height:38px;padding:0 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box" maxlength="20">
-        <div style="position:relative">
-          <input type="hidden" id="newGroupIcon" value="📁">
-          <button type="button" id="newGroupIconBtn" style="width:56px;min-width:0;height:38px;padding:0;border:1px solid #ddd;border-radius:6px;font-size:20px;background:#fff;cursor:pointer;box-sizing:border-box;display:flex;align-items:center;justify-content:center;line-height:1;transition:border-color .2s,box-shadow .2s" onclick="toggleIconPicker(this,'newGroupIcon')">📁</button>
+    <div class="modal-head">
+      <h2>📁 管理分组</h2>
+      <div class="hint" style="margin-top:4px">分组保存在密码文件中，换设备打开同一文件自动同步。</div>
+    </div>
+    <div class="modal-body">
+      <div id="groupManagerList"></div>
+    </div>
+    <div class="modal-foot" style="padding-top:8px">
+      <div style="border-top:1px solid #eee;padding-top:14px">
+        <div style="font-size:12px;color:#888;margin-bottom:8px;font-weight:600">+ 新增分组</div>
+        <div style="display:flex;gap:8px;align-items:stretch">
+          <input type="text" id="newGroupName" placeholder="输入分组名称，如 TikTok Shop" style="flex:2;min-width:0;height:38px;padding:0 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box" maxlength="20">
+          <div style="position:relative">
+            <input type="hidden" id="newGroupIcon" value="📁">
+            <button type="button" id="newGroupIconBtn" style="width:56px;min-width:0;height:38px;padding:0;border:1px solid #ddd;border-radius:6px;font-size:20px;background:#fff;cursor:pointer;box-sizing:border-box;display:flex;align-items:center;justify-content:center;line-height:1;transition:border-color .2s,box-shadow .2s" onclick="toggleIconPicker(this,'newGroupIcon')">📁</button>
+          </div>
+          <button class="btn btn-primary" style="height:38px;padding:0 22px;font-size:13px;white-space:nowrap;border-radius:6px;line-height:1" onclick="addGroup()">添加</button>
         </div>
-        <button class="btn btn-primary" style="height:38px;padding:0 22px;font-size:13px;white-space:nowrap;border-radius:6px;line-height:1" onclick="addGroup()">添加</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Confirm Modal ===== -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal" style="max-width:360px;text-align:center">
+    <div class="modal-head">
+      <div id="confirmIcon" style="font-size:36px;margin-bottom:8px">⚠️</div>
+      <h2 id="confirmTitle"></h2>
+    </div>
+    <div class="modal-body" style="padding-top:0">
+      <p id="confirmMsg" style="color:var(--text2);font-size:13px;margin:0"></p>
+    </div>
+    <div class="modal-foot">
+      <div class="modal-actions" style="justify-content:center;gap:10px">
+        <button class="btn btn-ghost" onclick="closeConfirm()" style="padding:8px 24px">取消</button>
+        <button class="btn btn-primary" id="confirmOk" style="padding:8px 24px">确认删除</button>
       </div>
     </div>
   </div>
@@ -748,23 +920,29 @@ async function saveToFile(){
     auditLog: vaultData.auditLog || [],
     modified: new Date().toISOString()
   }, null, 2);
+  vaultData.modified = new Date().toISOString(); // keep in-memory copy for stats panel
 
-  if(fileMode === 'fs' && fileHandle){
-    const writable = await fileHandle.createWritable();
-    await writable.write(content);
-    await writable.close();
-  } else {
-    // Manual mode: trigger download
-    const blob = new Blob([content], {type:'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    const fname = fileHandle ? fileHandle.name : '我的密码库.json';
-    a.download = fname;
-    a.click();
-    URL.revokeObjectURL(a.href);
-    toast('文件已下载，请替换原文件', 'success');
-  }
+  // Write lock to prevent concurrent file writes
+  while(_writeLock) await new Promise(r => setTimeout(r, 10));
+  _writeLock = true;
+  try{
+    if(fileMode === 'fs' && fileHandle){
+      const writable = await fileHandle.createWritable();
+      await writable.write(content);
+      await writable.close();
+    } else {
+      const blob = new Blob([content], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      const fname = fileHandle ? fileHandle.name : '我的密码库.json';
+      a.download = fname;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast('文件已下载，请替换原文件', 'success');
+    }
+  }finally{ _writeLock = false; }
 }
+let _writeLock = false;
 
 // ==================== Screen Management ====================
 function showStartScreen(){
@@ -799,6 +977,12 @@ function backToStart(){
   fileHandle = null;
   fileMode = 'none';
   currentGroup = '全部';
+  GROUPS_DATA = [];
+  loginFailCount = 0;
+  loginLockUntil = 0;
+  stopCountdownDisplay();
+  clearTimeout(autoLockTimer);
+  if(_resetThrottleTimer){ clearTimeout(_resetThrottleTimer); _resetThrottleTimer = null; }
   showStartScreen();
 }
 
@@ -818,37 +1002,48 @@ async function doSetup(){
   if(err){ toast(err); return; }
   if(pw1 !== pw2){ toast('两次密码不一致'); return; }
 
-  const salt = buf2hex(crypto.getRandomValues(new Uint8Array(16)));
-  cryptoKey = await deriveKey(pw1, salt);
-  const verify = await encryptData('__VERIFY_OK__', cryptoKey);
+  const btn = document.querySelector('#setupForm .btn-primary');
+  btn.disabled = true; btn.textContent = '⏳ 生成密钥中...';
 
-  vaultData = {
-    version: FILE_FORMAT_VERSION,
-    salt: salt,
-    verify: verify,
-    data: {ct:'', iv:''},
-    groups: [],
-    auditLog: []
-  };
-  vault = [];
-  GROUPS_DATA = [];
+  try{
+    const salt = buf2hex(crypto.getRandomValues(new Uint8Array(16)));
+    cryptoKey = await deriveKey(pw1, salt);
+    const verify = await encryptData('__VERIFY_OK__', cryptoKey);
 
-  await saveToFile();
-  enterApp();
-  toast('保险箱创建成功，已保存到文件', 'success');
+    vaultData = {
+      version: FILE_FORMAT_VERSION,
+      salt: salt,
+      verify: verify,
+      data: {ct:'', iv:''},
+      groups: [],
+      auditLog: []
+    };
+    vault = [];
+    GROUPS_DATA = [];
+
+    await saveToFile();
+    enterApp();
+    toast('保险箱创建成功，已保存到文件', 'success');
+  }catch(e){
+    toast('初始化失败');
+  }finally{
+    btn.disabled = false; btn.textContent = '创建保险箱';
+  }
 }
 
 async function doLogin(){
   const pw = document.getElementById('loginPw').value;
   if(!vaultData){ toast('请先打开或新建文件'); return; }
 
-  // #5 冷却检查
   const now = Date.now();
   if(now < loginLockUntil){
     const sec = Math.ceil((loginLockUntil - now) / 1000);
     toast(`密码错误次数过多，请等待 ${sec} 秒`);
     return;
   }
+
+  const btn = document.querySelector('#loginForm .btn-primary');
+  btn.disabled = true; btn.textContent = '⏳ 验证中...';
 
   try{
     cryptoKey = await deriveKey(pw, vaultData.salt);
@@ -864,10 +1059,11 @@ async function doLogin(){
     } else {
       toast(`主密码错误（已失败 ${loginFailCount}/3 次）`);
     }
+    btn.disabled = false; btn.textContent = '解锁';
     return;
   }
 
-  // 登录成功，重置失败计数
+  btn.disabled = false; btn.textContent = '解锁';
   loginFailCount = 0;
   loginLockUntil = 0;
 
@@ -904,8 +1100,9 @@ function enterApp(){
 }
 
 function lockApp(){
-  clearTimeout(autoLockTimer); // #6 清除自动锁定计时
-  stopCountdownDisplay();      // #6 停止倒计时显示
+  clearTimeout(autoLockTimer);
+  stopCountdownDisplay();
+  if(_resetThrottleTimer){ clearTimeout(_resetThrottleTimer); _resetThrottleTimer = null; }
   vault = [];
   cryptoKey = null;
   currentGroup = '全部';
@@ -966,13 +1163,13 @@ function openGroupManager(){
 
 const ICON_CATALOG = [
   {label:'颜色', icons:['🟠','🔴','🔵','🟢','🟡','🟣','🟤','⚫','⚪','🩷','🤎','🤍']},
-  {label:'电商/平台', icons:['🛒','🏪','🏬','💼','💰','💳','🏷️','🎁','📦','📊','📈','🧾','🏷️','💵','🪙']},
+  {label:'电商/平台', icons:['🛒','🏪','🏬','💼','💰','💳','🏷️','🎁','💵','🪙','📊','📈','🧾']},
   {label:'科技/设备', icons:['🌐','💻','🖥️','📱','🔧','⚙️','🔌','🔋','⌨️','🖱️','🖨️','💾','🗄️','☁️','📡']},
-  {label:'社交/通讯', icons:['📧','💬','📨','📲','📢','🔔','✉️','📞','📱','💭','🗣️','👋','🤝']},
+  {label:'社交/通讯', icons:['📧','💬','📨','📲','📢','🔔','✉️','📞','💭','🗣️','👋','🤝']},
   {label:'人物/组织', icons:['👤','👥','🧑‍💼','🏢','🏠','🏭','🏦','🏥','🎓','👩‍💻','👨‍💻']},
-  {label:'物流/运输', icons:['🚚','✈️','🚢','📮','🗺️','🚂','🚁','🛳️','🚕','🛴','📦','🏬']},
+  {label:'物流/运输', icons:['🚚','✈️','🚢','📮','🗺️','🚂','🚁','🛳️','🚕','🛴']},
   {label:'安全/标记', icons:['🔑','🔒','🔐','🛡️','⭐','🎯','📌','🌟','💡','🔥','✅','❌','⚠️','🚫','🔓']},
-  {label:'常用/其他', icons:['📁','📂','🗂️','📋','📝','🔖','🏷️','📌','🎨','🎮','🎵','🎬','🌍','🌏','🌎']}
+  {label:'常用/其他', icons:['📁','📂','🗂️','📋','📝','🔖','🎨','🎮','🎵','🎬','🌍','🌏','🌎']}
 ];
 
 let activeIconPicker = null;
@@ -1197,11 +1394,16 @@ async function moveGroup(idx, dir){
 // ==================== Sidebar ====================
 function renderSidebar(){
   const sb = document.getElementById('sidebar');
-  const counts = {};
-  counts['全部'] = vault.length;
-  GROUPS_DATA.forEach(g => counts[g.name] = vault.filter(e => e.group === g.name).length);
+  const counts = {'全部': vault.length};
+  for(const e of vault){ counts[e.group] = (counts[e.group] || 0) + 1; }
+  GROUPS_DATA.forEach(g => { counts[g.name] = counts[g.name] || 0; });
 
-  let html = `<div class="grp ${currentGroup==='全部'?'active':''}" onclick="selectGroup('全部')"><span>📋 全部</span><span class="count">${counts['全部']}</span></div>`;
+  let html = `<div class="side-search">
+    <span style="position:absolute;left:22px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:13px">🔍</span>
+    <input type="text" id="searchInput" aria-label="搜索平台名称或账号" placeholder="搜索..." oninput="onSearchInput()">
+  </div>
+  <div class="divider"></div>
+  <div class="grp ${currentGroup==='全部'?'active':''}" onclick="selectGroup('全部')"><span>📋 全部</span><span class="count">${counts['全部']}</span></div>`;
   html += '<div class="divider"></div>';
   if(GROUPS_DATA.length === 0){
     html += `<div style="margin:6px 10px;padding:8px 10px;border:1px dashed #d93025;border-radius:6px;background:#fef5f5;text-align:center;cursor:pointer" onclick="openGroupManager()">
@@ -1216,21 +1418,14 @@ function renderSidebar(){
   html += '<div class="divider"></div>';
   html += `<div class="grp" onclick="openGroupManager()"><span>📁 管理分组</span></div>`;
   html += `<div class="grp" onclick="openModal('pwModal')"><span>🔑 修改主密码</span></div>`;
-  const addBtn = document.getElementById('addBtn');
-  if(addBtn){
-    if(GROUPS_DATA.length === 0){
-      addBtn.disabled = true;
-      addBtn.style.opacity = '0.45';
-      addBtn.style.cursor = 'not-allowed';
-      addBtn.title = '请先创建分组';
-    }else{
-      addBtn.disabled = false;
-      addBtn.style.opacity = '';
-      addBtn.style.cursor = '';
-      addBtn.title = '';
-    }
-  }
+  // Stats
+  html += `<div class="stats-panel">
+    <div class="stat-row"><span>总账号</span><span class="stat-val">${counts['全部']}</span></div>
+    ${vaultData && vaultData.modified ? `<div class="stat-row" style="margin-top:2px"><span>最近修改</span><span style="font-size:10px;color:var(--text2)">${new Date(vaultData.modified).toLocaleString('zh-CN',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span></div>` : ''}
+  </div>`;
+  const searchVal = document.getElementById('searchInput')?.value || '';
   sb.innerHTML = html;
+  if(searchVal) document.getElementById('searchInput').value = searchVal;
 }
 
 function getGrpIcon(g){
@@ -1265,21 +1460,37 @@ function renderEntries(){
   content.innerHTML = '<div class="entry-grid">' + list.map(e => `
     <div class="entry-card">
       <div class="card-actions">
-        <button class="btn btn-ghost btn-sm" onclick="openEdit('${e.id}')">编辑</button>
-        <button class="btn btn-ghost btn-sm" onclick="deleteEntry('${e.id}')">删除</button>
+        <button class="btn btn-ghost btn-sm js-edit-entry" data-id="${e.id}">编辑</button>
+        <button class="btn btn-ghost btn-sm js-delete-entry" data-id="${e.id}">删除</button>
       </div>
       <div class="grp-tag">${getGrpIcon(e.group||'其他')} ${escHtml(e.group||'其他')}</div>
       <div class="platform">${escHtml(e.platform||'')}</div>
-      <div class="field"><span class="lbl">账号</span><span class="val" title="${escAttr(e.user||'')}">${escHtml(e.user||'—')}</span><span class="copy" onclick="copyText('${escAttr(e.user||'')}')">复制</span></div>
-      <div class="field"><span class="lbl">密码</span><span class="val pw-val" id="pw_${e.id}">••••••••</span><span class="eye" onclick="toggleEntryPw('${e.id}',this)">👁</span><span class="copy" onclick="copyEntryPw('${e.id}')">复制</span></div>
-      ${e.url ? `<div class="field"><span class="lbl">网址</span><span class="val" title="${escAttr(e.url)}"><a href="${escAttr(e.url)}" target="_blank" style="color:var(--primary);text-decoration:none">${escHtml(e.url)}</a></span></div>` : ''}
+      <div class="field"><span class="lbl">账号</span><span class="val" title="${escAttr(e.user||'')}">${escHtml(e.user||'—')}</span><span class="copy" data-copy-user="${escAttr(e.user||'')}">复制</span></div>
+      <div class="field"><span class="lbl">密码</span><span class="val pw-val" id="pw_${e.id}">••••••••</span><span class="eye" data-toggle-pw="${e.id}">👁</span><span class="copy" data-copy-pw="${e.id}">复制</span></div>
+      ${e.url ? `<div class="field"><span class="lbl">网址</span><span class="val" title="${escAttr(e.url)}"><a href="${safeUrl(e.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:none">${escHtml(e.url)}</a></span></div>` : ''}
       ${e.note ? `<div class="field"><span class="lbl">备注</span><span class="val note">${escHtml(e.note)}</span></div>` : ''}
     </div>
   `).join('') + '</div>';
+
+  // Attach real event listeners after DOM rebuild
+  content.querySelectorAll('.js-delete-entry').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      deleteEntry(id);
+    });
+  });
+  content.querySelectorAll('.js-edit-entry').forEach(btn => {
+    btn.addEventListener('click', () => openEdit(btn.getAttribute('data-id')));
+  });
 }
 
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function safeUrl(u){ const t=(u||'').trim(); return /^https?:\/\//i.test(t) ? escAttr(t) : '#'; }
+
+// Search debounce
+let searchDebounce;
+function onSearchInput(){ clearTimeout(searchDebounce); searchDebounce = setTimeout(renderEntries, 200); }
 
 // ===== pw auto-hide timers (id → timer) =====
 const pwHideTimers = {};
@@ -1321,6 +1532,7 @@ function copyEntryPw(id){ // #1 从内存读密码再复制
 
 // ==================== Add / Edit ====================
 function openAdd(){
+  if(GROUPS_DATA.length === 0){ toast('请先在侧边栏创建分组'); return; }
   editMode = 'add';
   document.getElementById('modalTitle').textContent = '添加账号';
   document.getElementById('editId').value = '';
@@ -1391,26 +1603,26 @@ let deletedEntry = null;
 let deleteUndoTimer = null;
 
 async function deleteEntry(id){
-  if(!confirm('确认删除这条记录？')) return;
-  deletedEntry = vault.find(x => x.id === id) || null;
-  vault = vault.filter(x => x.id !== id);
-  isDirty = true; // #3
-  await persist();
-  renderSidebar();
-  renderEntries();
-
-  // 清除旧的撤销计时
-  clearTimeout(deleteUndoTimer);
-
-  // 显示可撤销的 toast（5 秒）
-  const t = document.getElementById('toast');
-  t.innerHTML = '已删除 <span style="text-decoration:underline;cursor:pointer;margin-left:8px" onclick="undoDelete()">撤销</span>';
-  t.className = 'toast show';
-  clearTimeout(toastTimer);
-  deleteUndoTimer = setTimeout(() => {
-    t.classList.remove('show');
-    deletedEntry = null;
-  }, 5000);
+  const entry = vault.find(x => x.id === id);
+  if(!entry) return;
+  let confirmed = false;
+  showConfirm('删除账号', `确定要删除「${entry.platform||'未命名'}」吗？`, () => { confirmed = true; execDelete(); });
+  function execDelete(){
+    if(!confirmed) return;
+    deletedEntry = vault.find(x => x.id === id) || null;
+    vault = vault.filter(x => x.id !== id);
+    isDirty = true;
+    persist().then(() => {
+      renderSidebar();
+      renderEntries();
+      clearTimeout(deleteUndoTimer);
+      const t = document.getElementById('toast');
+      t.innerHTML = '已删除 <span style="text-decoration:underline;cursor:pointer;margin-left:8px" onclick="undoDelete()">撤销</span>';
+      t.className = 'toast show';
+      clearTimeout(toastTimer);
+      deleteUndoTimer = setTimeout(() => { t.classList.remove('show'); deletedEntry = null; }, 5000);
+    });
+  }
 }
 
 async function undoDelete(){
@@ -1429,11 +1641,62 @@ async function undoDelete(){
 // ==================== Generator ====================
 function openGenerator(){
   generatePw();
+  switchGenTab('pw');
+  setTimeout(initCustomSlider, 50);
   openModal('genModal');
 }
 
+// ==================== Custom Slider ====================
+let _sliderInited = false;
+function initCustomSlider(){
+  const s = document.getElementById('customSlider');
+  const thumb = document.getElementById('csThumb');
+  const fill = document.getElementById('csFill');
+  const val = document.getElementById('genLenVal');
+  const min = parseInt(s.dataset.min), max = parseInt(s.dataset.max);
+  let isDragging = false, lastValue = -1;
+
+  function setValue(pct){
+    pct = Math.max(0, Math.min(100, pct));
+    const v = Math.round(min + (max-min)*pct/100);
+    if(v === lastValue) return;
+    lastValue = v;
+    s.dataset.value = v;
+    val.textContent = v;
+    const trackW = s.offsetWidth - 28;
+    thumb.style.left = (14 + trackW * pct / 100) + 'px';
+    fill.style.width = pct + '%';
+    generatePw();
+  }
+
+  function onMove(e){ if(isDragging) setValue(getPct(e)); }
+  function onUp(){ isDragging = false; }
+  function getPct(e){
+    const rect = s.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left - 14;
+    return (x / (rect.width - 28)) * 100;
+  }
+
+  if(!_sliderInited){
+    thumb.addEventListener('mousedown', e => { isDragging = true; e.preventDefault(); });
+    thumb.addEventListener('touchstart', e => { isDragging = true; e.preventDefault(); });
+    s.addEventListener('click', e => { if(!isDragging) setValue(getPct(e)); });
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('touchmove', onMove, {passive:false});
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchend', onUp);
+    _sliderInited = true;
+  }
+
+  setValue((parseInt(s.dataset.value)-min)/(max-min)*100);
+}
+
+function getSliderValue(){
+  return parseInt(document.getElementById('customSlider').dataset.value);
+}
+
 function generatePw(){
-  const len = parseInt(document.getElementById('genLen').value);
+  const len = getSliderValue();
   const upper = document.getElementById('genUpper').checked;
   const lower = document.getElementById('genLower').checked;
   const num = document.getElementById('genNum').checked;
@@ -1444,19 +1707,80 @@ function generatePw(){
   if(lower) chars += 'abcdefghijklmnopqrstuvwxyz';
   if(num) chars += '0123456789';
   if(sym) chars += '!@#$%^&*()-_=+[]{}';
-  if(!chars){ document.getElementById('genResult').value = '请至少选择一种字符'; return; }
+  if(!chars){ document.getElementById('genResult').value = '请至少选择一种字符'; document.getElementById('genPwLabel').textContent = '已生成随机密码'; return; }
 
   const arr = new Uint32Array(len);
   crypto.getRandomValues(arr);
   let pw = '';
   for(let i=0;i<len;i++) pw += chars[arr[i] % chars.length];
   document.getElementById('genResult').value = pw;
+  document.getElementById('genPwLabel').textContent = '已生成 ' + len + ' 位随机密码';
 }
 
 function fillGenerated(){
   generatePw();
   document.getElementById('entryPw').value = document.getElementById('genResult').value;
   checkStrength(document.getElementById('entryPw').value);
+}
+
+// ==================== Hash ====================
+let currentHashAlgo = 'SHA-256';
+
+function switchGenTab(tab){
+  document.getElementById('genPwPanel').style.display = tab==='pw'?'block':'none';
+  document.getElementById('genHashPanel').style.display = tab==='hash'?'block':'none';
+  document.querySelectorAll('.tool-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active');
+  if(tab==='hash') computeHash();
+}
+
+function setHashAlgo(algo){
+  currentHashAlgo = algo;
+  document.querySelectorAll('.algo-btn').forEach(b => b.classList.toggle('active',b.dataset.algo===algo));
+  document.getElementById('hashAlgoLabel').textContent = algo;
+  computeHash();
+}
+
+async function computeHash(){
+  const input = document.getElementById('hashInput').value;
+  const result = document.getElementById('hashResult');
+  if(!input){ result.value=''; return; }
+  try{
+    if(currentHashAlgo==='MD5'){ result.value=md5(input); }
+    else{ const h=await crypto.subtle.digest(currentHashAlgo,new TextEncoder().encode(input)); result.value=buf2hex(h); }
+  }catch(e){ result.value='计算失败'; }
+}
+
+// MD5
+function md5(str){
+  function r(e,t){return(e<<t)|(e>>>(32-t))}
+  function q(a,b,c,d,x,s,t){return r(r(b,a)+r(c,d)+x+t,s)}
+  function aa(a,b,c,d,x,s,t){return r((b&c)|(~b&d)+a+x+t,s)}
+  function bb(a,b,c,d,x,s,t){return r((b&d)|(c&~d)+a+x+t,s)}
+  function cc(a,b,c,d,x,s,t){return r(b^c^d+a+x+t,s)}
+  function dd(a,b,c,d,x,s,t){return r(c^(b|~d)+a+x+t,s)}
+  var l=str.length,w=((l+8)>>6)+1<<4,i,x=[],j;
+  for(i=0;i<l;i++)x[i>>2]|=(str.charCodeAt(i)&255)<<((i%4)<<3);
+  x[i>>2]|=128<<((i%4)<<3);x[w-2]=l<<3;
+  var a=1732584193,b=-271733879,c=-1732584194,d=271733878;
+  for(i=0;i<w;i+=16){
+    var oa=a,ob=b,oc=c,od=d;
+    for(j=0;j<64;j++){
+      var f,g;
+      if(j<16){f=aa(a,b,c,d,x[i+j],7,-680876936);g=x[i+j]}
+      else if(j<32){f=bb(a,b,c,d,x[i+((j*5+1)%16)],12,-389564586);g=x[i+((j*5+1)%16)]}
+      else if(j<48){f=cc(a,b,c,d,x[i+(j*3+5)%16],17,606105819);g=x[i+(j*3+5)%16]}
+      else{f=dd(a,b,c,d,x[i+(j*7)%16],22,-1044525330);g=x[i+(j*7)%16]}
+      var t=a; a=d; d=c; c=b; b=r(b,f); a=t;
+    }
+    a=oa+a|0;b=ob+b|0;c=oc+c|0;d=od+d|0;
+  }
+  var out='';
+  for(j=0;j<16;j++){
+    var v=(j<4?a:j<8?b:j<12?c:d)>>>(j%4*8)&255;
+    out+=('0'+v.toString(16)).slice(-2);
+  }
+  return out;
 }
 
 // ==================== Strength ====================
@@ -1542,11 +1866,46 @@ function togglePw(id, el){
   else { inp.type = 'password'; el.textContent = '显示'; }
 }
 
-function openModal(id){ document.getElementById(id).classList.add('show'); }
-function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+let _modalCount = 0;
+function openModal(id){
+  document.getElementById(id).classList.add('show');
+  if(++_modalCount === 1) document.body.style.overflow = 'hidden';
+}
+function closeModal(id){
+  document.getElementById(id).classList.remove('show');
+  if(--_modalCount <= 0){ _modalCount = 0; document.body.style.overflow = ''; }
+}
+
+// Custom confirm dialog
+let _confirmCallback = null;
+function showConfirm(title, msg, onOk){
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmOk').onclick = () => { closeConfirm(); onOk(); };
+  _confirmCallback = onOk;
+  openModal('confirmModal');
+}
+function closeConfirm(){
+  closeModal('confirmModal');
+  _confirmCallback = null;
+}
 
 document.querySelectorAll('.modal-overlay').forEach(o => {
-  o.addEventListener('click', e => { if(e.target === o) o.classList.remove('show'); });
+  o.addEventListener('click', e => {
+    if(e.target === o){
+      o.classList.remove('show');
+      if(activeIconPicker) closeIconPicker();
+    }
+  });
+});
+
+// Escape key closes modals
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){
+    const modals = document.querySelectorAll('.modal-overlay.show');
+    if(modals.length){ modals[modals.length-1].classList.remove('show'); return; }
+    if(activeIconPicker) closeIconPicker();
+  }
 });
 
 // ===== Clipboard warning bar =====
@@ -1613,9 +1972,45 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// More menu
+function toggleMoreMenu(e){
+  e.stopPropagation();
+  const dd = document.getElementById('moreDrop');
+  const isOpen = dd.style.display === 'block';
+  closeMoreMenu();
+  if(!isOpen){ dd.style.display = 'block'; setTimeout(() => document.addEventListener('click', closeMoreMenu, true), 0); }
+}
+function closeMoreMenu(){
+  const dd = document.getElementById('moreDrop');
+  dd.style.display = 'none';
+  document.removeEventListener('click', closeMoreMenu, true);
+}
+
 // Init
+function initTheme(){
+  const stored = localStorage.getItem('pm_theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme:dark)').matches;
+  if(stored === 'dark' || (!stored && prefersDark)) document.documentElement.setAttribute('data-theme','dark');
+}
+function toggleTheme(){
+  const el = document.documentElement;
+  if(el.hasAttribute('data-theme')){ el.removeAttribute('data-theme'); localStorage.setItem('pm_theme','light'); }
+  else{ el.setAttribute('data-theme','dark'); localStorage.setItem('pm_theme','dark'); }
+}
+
 window.addEventListener('DOMContentLoaded', () => {
+  initTheme();
   showStartScreen();
+
+  // Delegated click handler for copy/pw buttons
+  document.getElementById('content').addEventListener('click', e => {
+    const pwToggle = e.target.closest('[data-toggle-pw]');
+    if(pwToggle){ toggleEntryPw(pwToggle.getAttribute('data-toggle-pw'), pwToggle); return; }
+    const pwCopy = e.target.closest('[data-copy-pw]');
+    if(pwCopy){ copyEntryPw(pwCopy.getAttribute('data-copy-pw')); return; }
+    const userCopy = e.target.closest('[data-copy-user]');
+    if(userCopy){ copyText(userCopy.getAttribute('data-copy-user'), false); return; }
+  });
 });
 </script>
 </body>
