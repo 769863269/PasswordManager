@@ -267,6 +267,14 @@ html[data-theme="dark"] .more-item:hover{background:#0f3460}
       <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doLogin()">解锁</button>
       <button class="btn btn-ghost" style="width:100%;margin-top:8px;justify-content:center" onclick="backToStart()">返回</button>
     </div>
+    <div id="totpForm" style="display:none">
+      <div class="form-group">
+        <label>两步验证码</label>
+        <input type="text" id="totpCode" inputmode="numeric" maxlength="6" placeholder="输入6位验证码" autocomplete="one-time-code" onkeydown="if(event.key==='Enter')verifyTotpAndEnter()">
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="verifyTotpAndEnter()">验证并解锁</button>
+      <button class="btn btn-ghost" style="width:100%;margin-top:8px;justify-content:center" onclick="backToStart()">返回</button>
+    </div>
   </div>
 </div>
 
@@ -323,7 +331,9 @@ html[data-theme="dark"] .more-item:hover{background:#0f3460}
             <span class="toggle" onclick="togglePw('entryPw',this)">显示</span>
           </div>
           <button class="btn btn-ghost btn-sm" type="button" onclick="fillGenerated()">🎲</button>
+          <button class="btn btn-ghost btn-sm" type="button" id="hibpBtn" onclick="checkPwBreach()" title="检查密码是否泄露">🔍</button>
         </div>
+        <span id="hibpResult" style="font-size:11px;margin-top:4px;display:block"></span>
         <div class="strength" id="strengthBar"></div>
       </div>
       <div class="form-group">
@@ -490,7 +500,7 @@ html[data-theme="dark"] #hashInput{background:#0f3460;border-color:#2a2a4a}
       <div class="form-group">
         <label>新主密码</label>
         <div class="pw-wrap">
-          <input type="password" id="newPw1" placeholder="至少6位">
+          <input type="password" id="newPw1" placeholder="至少8位，含英文和数字">
           <span class="toggle" onclick="togglePw('newPw1',this)">显示</span>
         </div>
       </div>
@@ -526,6 +536,22 @@ html[data-theme="dark"] #hashInput{background:#0f3460;border-color:#2a2a4a}
     <div class="modal-foot">
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="closeModal('auditModal')">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOTP Modal ===== -->
+<div class="modal-overlay" id="totpModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-head">
+      <h2>🔐 两步验证</h2>
+    </div>
+    <div class="modal-body" id="totpModalBody">
+    </div>
+    <div class="modal-foot">
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal('totpModal')">关闭</button>
       </div>
     </div>
   </div>
@@ -580,7 +606,7 @@ html[data-theme="dark"] #hashInput{background:#0f3460;border-color:#2a2a4a}
 
 <script>
 // ==================== Config ====================
-const FILE_FORMAT_VERSION = 1;
+const FILE_FORMAT_VERSION = 2;
 const DEFAULT_GROUPS = [
   {name:'拼多多',icon:'🟠'},
   {name:'天猫/千牛',icon:'🔴'},
@@ -589,7 +615,8 @@ const DEFAULT_GROUPS = [
   {name:'速卖通',icon:'🔴'},
   {name:'其他',icon:'⚪'}
 ];
-let GROUPS_DATA = []; // loaded from vault file (encrypted), falls back to defaults
+let GROUPS_DATA = []; // loaded from encrypted vault blob
+
 // ==================== IndexedDB for persisting fileHandle ====================
 // File System Access API fileHandle can be stored in IndexedDB across page reloads.
 // On reload: restore handle → call requestPermission() (requires user gesture) → read file directly.
@@ -706,6 +733,9 @@ let fileHandle = null;      // File System Access API handle
 let vaultData = null;       // parsed file content {salt, verify, data:{ct,iv}}
 let fileMode = 'none';      // 'fs' = File System Access API, 'manual' = download/upload fallback
 let isDirty = false;        // unsaved changes flag (manual mode)
+let auditLog = [];          // in-memory audit log (encrypted inside data blob in v2)
+let totpSecret = null;      // base32 encoded TOTP secret, null = not enabled
+let totpEnabled = false;
 
 // ===== #5 Login failure cooldown =====
 let loginFailCount = 0;
@@ -792,10 +822,14 @@ function hex2buf(hex){
   return arr.buffer;
 }
 
-async function deriveKey(password, saltHex){
+const CURRENT_ITERATIONS = 1000000;
+const LEGACY_ITERATIONS = 500000;
+
+async function deriveKey(password, saltHex, iterations){
+  if(!iterations) iterations = CURRENT_ITERATIONS;
   const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
   return crypto.subtle.deriveKey(
-    {name:'PBKDF2', salt:hex2buf(saltHex), iterations:500000, hash:'SHA-256'},
+    {name:'PBKDF2', salt:hex2buf(saltHex), iterations:iterations, hash:'SHA-256'},
     keyMaterial,
     {name:'AES-GCM', length:256},
     false,
@@ -913,11 +947,10 @@ async function saveToFile(){
 
   const content = JSON.stringify({
     version: FILE_FORMAT_VERSION,
+    iterations: vaultData.iterations || CURRENT_ITERATIONS,
     salt: vaultData.salt,
     verify: vaultData.verify,
     data: vaultData.data,
-    groups: vaultData.groups || [],
-    auditLog: vaultData.auditLog || [],
     modified: new Date().toISOString()
   }, null, 2);
   vaultData.modified = new Date().toISOString(); // keep in-memory copy for stats panel
@@ -958,6 +991,7 @@ function showLoginScreen(){
   document.getElementById('mainScreen').style.display = 'none';
   document.getElementById('loginForm').style.display = 'block';
   document.getElementById('setupForm').style.display = 'none';
+  document.getElementById('totpForm').style.display = 'none';
   document.getElementById('loginSub').textContent = '输入主密码解锁文件';
 }
 
@@ -967,6 +1001,7 @@ function showSetupScreen(){
   document.getElementById('mainScreen').style.display = 'none';
   document.getElementById('loginForm').style.display = 'none';
   document.getElementById('setupForm').style.display = 'block';
+  document.getElementById('totpForm').style.display = 'none';
   document.getElementById('loginSub').textContent = '首次使用，请设置主密码';
 }
 
@@ -978,11 +1013,16 @@ function backToStart(){
   fileMode = 'none';
   currentGroup = '全部';
   GROUPS_DATA = [];
+  auditLog = [];
+  totpSecret = null;
+  totpEnabled = false;
   loginFailCount = 0;
   loginLockUntil = 0;
   stopCountdownDisplay();
   clearTimeout(autoLockTimer);
   if(_resetThrottleTimer){ clearTimeout(_resetThrottleTimer); _resetThrottleTimer = null; }
+  document.getElementById('totpForm').style.display = 'none';
+  document.getElementById('loginForm').style.display = 'block';
   showStartScreen();
 }
 
@@ -1012,14 +1052,16 @@ async function doSetup(){
 
     vaultData = {
       version: FILE_FORMAT_VERSION,
+      iterations: CURRENT_ITERATIONS,
       salt: salt,
       verify: verify,
-      data: {ct:'', iv:''},
-      groups: [],
-      auditLog: []
+      data: {ct:'', iv:''}
     };
     vault = [];
     GROUPS_DATA = [];
+    auditLog = [];
+    totpSecret = null;
+    totpEnabled = false;
 
     await saveToFile();
     enterApp();
@@ -1045,8 +1087,12 @@ async function doLogin(){
   const btn = document.querySelector('#loginForm .btn-primary');
   btn.disabled = true; btn.textContent = '⏳ 验证中...';
 
+  // 旧文件无 iterations 字段，使用旧版 500000 迭代
+  const iters = vaultData.iterations || LEGACY_ITERATIONS;
+  const needMigration = iters < CURRENT_ITERATIONS;
+
   try{
-    cryptoKey = await deriveKey(pw, vaultData.salt);
+    cryptoKey = await deriveKey(pw, vaultData.salt, iters);
     const check = await decryptData(vaultData.verify.ct, vaultData.verify.iv, cryptoKey);
     if(check !== '__VERIFY_OK__') throw new Error('fail');
   }catch(e){
@@ -1067,24 +1113,69 @@ async function doLogin(){
   loginFailCount = 0;
   loginLockUntil = 0;
 
+  // Decrypt data — v2 format has {v,g,a,t}, v1 has vault array directly
   if(vaultData.data && vaultData.data.ct){
     try{
       const json = await decryptData(vaultData.data.ct, vaultData.data.iv, cryptoKey);
-      vault = JSON.parse(json);
+      const parsed = JSON.parse(json);
+      if(vaultData.version >= 2){
+        // v2 format: encrypted object with v/g/a/t keys
+        vault = parsed.v || [];
+        GROUPS_DATA = parsed.g || [];
+        auditLog = parsed.a || [];
+        totpSecret = parsed.t || null;
+      } else {
+        // v1 format: encrypted vault array directly, groups/auditLog at top-level
+        vault = Array.isArray(parsed) ? parsed : [];
+        GROUPS_DATA = vaultData.groups || [];
+        auditLog = vaultData.auditLog || [];
+        totpSecret = null;
+      }
     }catch(e){
       vault = [];
+      GROUPS_DATA = [];
+      auditLog = [];
+      totpSecret = null;
     }
   } else {
     vault = [];
+    GROUPS_DATA = [];
+    auditLog = [];
+    totpSecret = null;
   }
 
-  // 审计日志：记录本次解锁时间
+  totpEnabled = !!totpSecret;
+
+  // 旧文件迁移：用更高迭代次数重加密
+  if(needMigration){
+    btn.disabled = true; btn.textContent = '⏳ 正在升级加密...';
+    try{
+      const newKey = await deriveKey(pw, vaultData.salt, CURRENT_ITERATIONS);
+      vaultData.verify = await encryptData('__VERIFY_OK__', newKey);
+      vaultData.iterations = CURRENT_ITERATIONS;
+      // 后续 appendAuditLog → persist 会用旧 cryptoKey 加密 data
+      // 这里用新 key 重加密 data，再替换 cryptoKey
+      const dataJson = JSON.stringify({v:vault, g:GROUPS_DATA, a:auditLog, t:totpSecret});
+      vaultData.data = await encryptData(dataJson, newKey);
+      cryptoKey = newKey;
+    }catch(e){
+      // 迁移失败不影响使用，继续用旧密钥
+    }
+    btn.disabled = false; btn.textContent = '解锁';
+  }
+
+  // 审计日志：记录本次解锁时间（会通过 persist 加密到 data blob 中）
   await appendAuditLog();
 
-  // 加载分组数据
-  GROUPS_DATA = vaultData.groups || [];
-
-  enterApp();
+  // TOTP 两步验证
+  if(totpEnabled){
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('totpForm').style.display = 'block';
+    document.getElementById('totpCode').value = '';
+    setTimeout(() => document.getElementById('totpCode').focus(), 50);
+  } else {
+    enterApp();
+  }
 }
 
 function enterApp(){
@@ -1106,31 +1197,34 @@ function lockApp(){
   vault = [];
   cryptoKey = null;
   currentGroup = '全部';
+  auditLog = [];
+  totpSecret = null;
+  totpEnabled = false;
   document.getElementById('mainScreen').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginForm').style.display = 'block';
   document.getElementById('setupForm').style.display = 'none';
+  document.getElementById('totpForm').style.display = 'none';
   document.getElementById('loginSub').textContent = '输入主密码解锁文件';
   document.getElementById('loginPw').value = '';
 }
 
 // ==================== Audit Log ====================
 async function appendAuditLog(){
-  if(!vaultData || !cryptoKey) return;
+  if(!cryptoKey) return;
   const now = new Date().toISOString();
   const ua = navigator.userAgent.slice(0, 80); // 浏览器简短标识
   const entry = { time: now, ua };
-  if(!Array.isArray(vaultData.auditLog)) vaultData.auditLog = [];
-  vaultData.auditLog.push(entry);
+  auditLog.push(entry);
   // 只保留最近 20 条
-  if(vaultData.auditLog.length > 20) vaultData.auditLog = vaultData.auditLog.slice(-20);
-  // 写入文件（只改元数据，不重新加密 vault 数据）
-  try{ await saveToFile(); }catch(e){}
+  if(auditLog.length > 20) auditLog = auditLog.slice(-20);
+  // 通过 persist 整体加密写入文件（v2 格式 auditLog 在加密 blob 内）
+  try{ await persist(); }catch(e){}
 }
 
 function showAuditLog(){
   const list = document.getElementById('auditList');
-  const logs = (vaultData && vaultData.auditLog) || [];
+  const logs = auditLog;
   if(logs.length === 0){
     list.innerHTML = '<div style="color:#888;padding:8px 0">暂无记录（本次版本升级后首次登录起开始记录）</div>';
   } else {
@@ -1148,7 +1242,7 @@ function showAuditLog(){
 // ==================== Persist ====================
 async function persist(){
   if(!vaultData || !cryptoKey) return;
-  const json = JSON.stringify(vault);
+  const json = JSON.stringify({v:vault, g:GROUPS_DATA, a:auditLog, t:totpSecret});
   const enc2 = await encryptData(json, cryptoKey);
   vaultData.data = enc2;
   await saveToFile();
@@ -1324,8 +1418,7 @@ async function saveEditGroup(idx){
     vault.forEach(e => { if(e.group === oldName) e.group = newName; });
     if(currentGroup === oldName) currentGroup = newName;
   }
-  vaultData.groups = GROUPS_DATA.map(x => ({...x}));
-  await saveToFile();
+  await persist();
   editingIdx = -1;
   renderGroupManager();
   renderSidebar();
@@ -1339,8 +1432,7 @@ async function addGroup(){
   if(GROUPS_DATA.some(g => g.name === name)){ toast('该分组已存在'); return; }
   const icon = document.getElementById('newGroupIcon').value;
   GROUPS_DATA.push({name, icon});
-  vaultData.groups = GROUPS_DATA.map(g => ({...g}));
-  await saveToFile();
+  await persist();
   document.getElementById('newGroupName').value = '';
   renderGroupManager();
   renderSidebar();
@@ -1372,8 +1464,7 @@ async function deleteGroup(idx){
   clearTimeout(pendingDeleteTimer);
   pendingDeleteIdx = -1;
   GROUPS_DATA.splice(idx, 1);
-  vaultData.groups = GROUPS_DATA.map(g => ({...g}));
-  await saveToFile();
+  await persist();
   renderGroupManager();
   renderSidebar();
   toast('分组已删除并保存', 'success');
@@ -1385,8 +1476,7 @@ async function moveGroup(idx, dir){
   const tmp = GROUPS_DATA[idx];
   GROUPS_DATA[idx] = GROUPS_DATA[newIdx];
   GROUPS_DATA[newIdx] = tmp;
-  vaultData.groups = GROUPS_DATA.map(g => ({...g}));
-  await saveToFile();
+  await persist();
   renderGroupManager();
   renderSidebar();
 }
@@ -1418,6 +1508,7 @@ function renderSidebar(){
   html += '<div class="divider"></div>';
   html += `<div class="grp" onclick="openGroupManager()"><span>📁 管理分组</span></div>`;
   html += `<div class="grp" onclick="openModal('pwModal')"><span>🔑 修改主密码</span></div>`;
+  html += `<div class="grp" onclick="openTotpModal()"><span>🔐 两步验证</span></div>`;
   // Stats
   html += `<div class="stats-panel">
     <div class="stat-row"><span>总账号</span><span class="stat-val">${counts['全部']}</span></div>
@@ -1809,8 +1900,6 @@ async function exportBackup(){
     salt: vaultData.salt,
     verify: vaultData.verify,
     data: vaultData.data,
-    groups: vaultData.groups || [],
-    auditLog: vaultData.auditLog || [],
     modified: new Date().toISOString(),
     backup: true
   }, null, 2);
@@ -1831,8 +1920,9 @@ async function changeMasterPw(){
   const np2 = document.getElementById('newPw2').value;
 
   if(!vaultData){ toast('数据异常'); return; }
+  const iters = vaultData.iterations || LEGACY_ITERATIONS;
   try{
-    const testKey = await deriveKey(oldPw, vaultData.salt);
+    const testKey = await deriveKey(oldPw, vaultData.salt, iters);
     const check = await decryptData(vaultData.verify.ct, vaultData.verify.iv, testKey);
     if(check !== '__VERIFY_OK__'){ toast('当前密码错误'); return; }
   }catch(e){ toast('当前密码错误'); return; }
@@ -1842,21 +1932,220 @@ async function changeMasterPw(){
   if(np1 !== np2){ toast('两次新密码不一致'); return; }
 
   const newSalt = buf2hex(crypto.getRandomValues(new Uint8Array(16)));
-  cryptoKey = await deriveKey(np1, newSalt);
+  cryptoKey = await deriveKey(np1, newSalt, CURRENT_ITERATIONS);
   const verify = await encryptData('__VERIFY_OK__', cryptoKey);
-  const json = JSON.stringify(vault);
+  const json = JSON.stringify({v:vault, g:GROUPS_DATA, a:auditLog, t:totpSecret});
   const enc2 = await encryptData(json, cryptoKey);
 
   vaultData.salt = newSalt;
   vaultData.verify = verify;
   vaultData.data = enc2;
-  await saveToFile();
+  vaultData.iterations = CURRENT_ITERATIONS;
+  vaultData.version = FILE_FORMAT_VERSION;
+  await persist();
 
   closeModal('pwModal');
   document.getElementById('oldPw').value = '';
   document.getElementById('newPw1').value = '';
   document.getElementById('newPw2').value = '';
   toast('主密码已更新，文件已保存', 'success');
+}
+
+// ==================== TOTP 两步验证 ====================
+function base32Decode(str) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  str = str.toUpperCase().replace(/=+$/, '').replace(/\s/g, '');
+  const bits = [];
+  for (let i = 0; i < str.length; i++) {
+    const val = alphabet.indexOf(str[i]);
+    if (val === -1) continue;
+    bits.push(...val.toString(2).padStart(5, '0').split('').map(Number));
+  }
+  const bytes = [];
+  for (let i = 0; i + 7 < bits.length; i += 8) {
+    bytes.push(parseInt(bits.slice(i, i + 8).join(''), 2));
+  }
+  return new Uint8Array(bytes);
+}
+
+function generateTotpSecret() {
+  const bytes = crypto.getRandomValues(new Uint8Array(20));
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let result = '';
+  let buffer = 0, bitsLeft = 0;
+  for (let i = 0; i < 20; i++) {
+    buffer = (buffer << 8) | bytes[i];
+    bitsLeft += 8;
+    while (bitsLeft >= 5) {
+      bitsLeft -= 5;
+      result += alphabet[(buffer >> bitsLeft) & 31];
+    }
+  }
+  if (bitsLeft > 0) result += alphabet[(buffer << (5 - bitsLeft)) & 31];
+  return result;
+}
+
+async function computeTotp(secret) {
+  const key = base32Decode(secret);
+  const counter = Math.floor(Date.now() / 30000);
+  const counterBytes = new Uint8Array(8);
+  let c = counter;
+  for (let i = 7; i >= 0; i--) {
+    counterBytes[i] = c & 0xFF;
+    c = Math.floor(c / 256);
+  }
+  const hmacKey = await crypto.subtle.importKey('raw', key, {name:'HMAC', hash:'SHA-1'}, false, ['sign']);
+  const hmac = await crypto.subtle.sign('HMAC', hmacKey, counterBytes);
+  const hmacBytes = new Uint8Array(hmac);
+  const offset = hmacBytes[19] & 0x0F;
+  const code = ((hmacBytes[offset] & 0x7F) << 24 | hmacBytes[offset+1] << 16 | hmacBytes[offset+2] << 8 | hmacBytes[offset+3]) % 1000000;
+  return code.toString().padStart(6, '0');
+}
+
+async function verifyTotp(secret, code) {
+  if (!secret || !code) return false;
+  const expected = await computeTotp(secret);
+  return code === expected;
+}
+
+function getTotpUri(secret, label) {
+  return `otpauth://totp/密码管理器:${encodeURIComponent(label||'我的密码库')}?secret=${secret}&issuer=密码管理器&algorithm=SHA1&digits=6&period=30`;
+}
+
+async function openTotpModal() {
+  const body = document.getElementById('totpModalBody');
+  if (totpEnabled && totpSecret) {
+    // 已启用：显示状态和关闭选项
+    body.innerHTML = `<div style="text-align:center;padding:10px 0">
+      <div style="font-size:48px;margin-bottom:12px">✅</div>
+      <div style="font-weight:600;font-size:15px;margin-bottom:4px">两步验证已启用</div>
+      <div style="color:var(--text2);font-size:12px;margin-bottom:16px">每次登录需要输入动态验证码</div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
+      <div style="font-size:13px;margin-bottom:12px;color:var(--text2)">关闭两步验证需要输入当前验证码确认</div>
+      <div class="form-group" style="text-align:left">
+        <label>当前验证码</label>
+        <input type="text" id="totpDisableCode" inputmode="numeric" maxlength="6" placeholder="输入6位验证码" autocomplete="off">
+      </div>
+      <button class="btn btn-primary" style="width:100%;background:#d93025;justify-content:center" onclick="disableTotp()">关闭两步验证</button>
+    </div>`;
+  } else {
+    // 未启用：显示开启选项
+    body.innerHTML = `<div style="text-align:center;padding:10px 0">
+      <div style="font-size:48px;margin-bottom:12px">🔐</div>
+      <div style="font-weight:600;font-size:15px;margin-bottom:4px">两步验证未开启</div>
+      <div style="color:var(--text2);font-size:12px;margin-bottom:16px">开启后每次登录需要输入动态验证码</div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" id="enableTotpBtn" onclick="enableTotpStep1()">开启两步验证</button>
+      <div id="totpSetupArea" style="display:none;margin-top:16px"></div>
+    </div>`;
+  }
+  openModal('totpModal');
+}
+
+let _pendingTotpSecret = null;
+
+async function enableTotpStep1() {
+  _pendingTotpSecret = generateTotpSecret();
+  const area = document.getElementById('totpSetupArea');
+  area.style.display = 'block';
+  const uri = getTotpUri(_pendingTotpSecret, '我的密码库');
+  area.innerHTML = `<hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
+    <div style="text-align:left">
+      <div class="form-group">
+        <label>密钥（请复制到 Google Authenticator 等验证器应用中）</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" readonly value="${_pendingTotpSecret}" style="font-family:Consolas,Monaco,monospace;font-size:13px;flex:1" onclick="this.select()">
+          <button class="btn btn-ghost btn-sm" type="button" onclick="copyText('${_pendingTotpSecret.replace(/'/g,"\\'")}', false)">📋</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>otpauth URI（备用）</label>
+        <input type="text" readonly value="${uri.replace(/"/g,'&quot;')}" style="font-size:11px;font-family:monospace" onclick="this.select()">
+      </div>
+      <div class="form-group">
+        <label>输入验证器显示的验证码确认</label>
+        <input type="text" id="totpConfirmCode" inputmode="numeric" maxlength="6" placeholder="输入6位验证码" autocomplete="off">
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="enableTotpConfirm()">确认启用</button>
+    </div>`;
+}
+
+async function enableTotpConfirm() {
+  const code = document.getElementById('totpConfirmCode').value.trim();
+  if (!/^\d{6}$/.test(code)) { toast('请输入6位验证码'); return; }
+  const valid = await verifyTotp(_pendingTotpSecret, code);
+  if (!valid) { toast('验证码错误，请重试'); return; }
+  totpSecret = _pendingTotpSecret;
+  totpEnabled = true;
+  _pendingTotpSecret = null;
+  await persist();
+  closeModal('totpModal');
+  toast('两步验证已启用并保存', 'success');
+}
+
+async function disableTotp() {
+  const code = document.getElementById('totpDisableCode')?.value?.trim() || '';
+  if (!/^\d{6}$/.test(code)) { toast('请输入6位验证码'); return; }
+  const valid = await verifyTotp(totpSecret, code);
+  if (!valid) { toast('验证码错误'); return; }
+  totpSecret = null;
+  totpEnabled = false;
+  await persist();
+  closeModal('totpModal');
+  toast('两步验证已关闭', 'success');
+}
+
+async function verifyTotpAndEnter() {
+  const code = document.getElementById('totpCode').value.trim();
+  if (!/^\d{6}$/.test(code)) { toast('请输入6位验证码'); return; }
+  const valid = await verifyTotp(totpSecret, code);
+  if (valid) {
+    enterApp();
+  } else {
+    toast('验证码错误');
+    document.getElementById('totpCode').value = '';
+    document.getElementById('totpCode').focus();
+  }
+}
+
+// ==================== HIBP 密码泄露检查 ====================
+async function checkPasswordBreach(pw) {
+  const hashBytes = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(pw));
+  const hashHex = Array.from(new Uint8Array(hashBytes)).map(b => b.toString(16).padStart(2,'0')).join('').toUpperCase();
+  const prefix = hashHex.slice(0, 5);
+  const suffix = hashHex.slice(5);
+  try {
+    const resp = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`);
+    const text = await resp.text();
+    const lines = text.split('\n');
+    for (const line of lines) {
+      const [hashSuffix, count] = line.split(':');
+      if (hashSuffix.trim() === suffix) {
+        return parseInt(count);
+      }
+    }
+    return 0;
+  } catch(e) {
+    return -1;
+  }
+}
+
+async function checkPwBreach() {
+  const pw = document.getElementById('entryPw').value;
+  const result = document.getElementById('hibpResult');
+  if (!pw) { result.textContent = ''; return; }
+  result.textContent = '⏳ 检查中...';
+  result.style.color = 'var(--text2)';
+  const count = await checkPasswordBreach(pw);
+  if (count === 0) {
+    result.textContent = '✅ 此密码未在已知泄露中出现';
+    result.style.color = '#1e8e3e';
+  } else if (count > 0) {
+    result.textContent = `⚠️ 此密码已在 ${count} 次数据泄露中出现，建议更换`;
+    result.style.color = '#d93025';
+  } else {
+    result.textContent = '网络错误，请稍后重试';
+    result.style.color = '#f9a825';
+  }
 }
 
 // ==================== Utils ====================
