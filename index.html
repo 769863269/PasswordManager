@@ -733,6 +733,10 @@ let fileHandle = null;      // File System Access API handle
 let vaultData = null;       // parsed file content {salt, verify, data:{ct,iv}}
 let fileMode = 'none';      // 'fs' = File System Access API, 'manual' = download/upload fallback
 let isDirty = false;        // unsaved changes flag (manual mode)
+const PAGE_SIZE = 20;
+let renderPage = 0;
+let autoSaveTimer = null;
+let _lastFilterKey = '';
 let auditLog = [];          // in-memory audit log (encrypted inside data blob in v2)
 let totpSecret = null;      // base32 encoded TOTP secret, null = not enabled
 let totpEnabled = false;
@@ -845,6 +849,30 @@ async function encryptData(plaintext, key){
 
 async function decryptData(ctHex, ivHex, key){
   const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:hex2buf(ivHex)}, key, hex2buf(ctHex));
+  return dec.decode(pt);
+}
+
+// gzip 压缩 → 加密（大幅减小加密数据体积）
+async function compressAndEncrypt(json, key){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const blob = new Blob([enc.encode(json)]);
+  const compressed = await new Response(
+    blob.stream().pipeThrough(new CompressionStream('gzip'))
+  ).arrayBuffer();
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, compressed);
+  return {ct: buf2hex(ct), iv: buf2hex(iv)};
+}
+
+// 解密 → 自动检测 gzip 并解压（兼容旧文件未压缩格式）
+async function decryptAndDecompress(ctHex, ivHex, key){
+  const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:hex2buf(ivHex)}, key, hex2buf(ctHex));
+  const bytes = new Uint8Array(pt);
+  if(bytes.length >= 2 && bytes[0] === 0x1F && bytes[1] === 0x8B){
+    const decompressed = await new Response(
+      new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))
+    ).arrayBuffer();
+    return dec.decode(decompressed);
+  }
   return dec.decode(pt);
 }
 
@@ -1021,6 +1049,8 @@ function backToStart(){
   stopCountdownDisplay();
   clearTimeout(autoLockTimer);
   if(_resetThrottleTimer){ clearTimeout(_resetThrottleTimer); _resetThrottleTimer = null; }
+  clearTimeout(_saveTimer);
+  clearInterval(autoSaveTimer);
   document.getElementById('totpForm').style.display = 'none';
   document.getElementById('loginForm').style.display = 'block';
   showStartScreen();
@@ -1116,8 +1146,25 @@ async function doLogin(){
   // Decrypt data — v2 format has {v,g,a,t}, v1 has vault array directly
   if(vaultData.data && vaultData.data.ct){
     try{
-      const json = await decryptData(vaultData.data.ct, vaultData.data.iv, cryptoKey);
-      const parsed = JSON.parse(json);
+      const raw = await decryptAndDecompress(vaultData.data.ct, vaultData.data.iv, cryptoKey);
+      // 完整性校验：检查 SHA-256 校验和（旧文件无校验和则跳过）
+      const hashSep = raw.lastIndexOf('::HASH::');
+      let parsed;
+      if(hashSep !== -1){
+        const payload = raw.slice(0, hashSep);
+        const storedHash = raw.slice(hashSep + 8);
+        const actualHash = buf2hex(new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode(payload))));
+        if(actualHash !== storedHash){
+          toast('数据文件已损坏，请恢复备份');
+          cryptoKey = null;
+          btn.disabled = false; btn.textContent = '解锁';
+          return;
+        }
+        parsed = JSON.parse(payload);
+      } else {
+        // 旧文件无校验和，直接解析
+        parsed = JSON.parse(raw);
+      }
       if(vaultData.version >= 2){
         // v2 format: encrypted object with v/g/a/t keys
         vault = parsed.v || [];
@@ -1153,10 +1200,8 @@ async function doLogin(){
       const newKey = await deriveKey(pw, vaultData.salt, CURRENT_ITERATIONS);
       vaultData.verify = await encryptData('__VERIFY_OK__', newKey);
       vaultData.iterations = CURRENT_ITERATIONS;
-      // 后续 appendAuditLog → persist 会用旧 cryptoKey 加密 data
-      // 这里用新 key 重加密 data，再替换 cryptoKey
       const dataJson = JSON.stringify({v:vault, g:GROUPS_DATA, a:auditLog, t:totpSecret});
-      vaultData.data = await encryptData(dataJson, newKey);
+      vaultData.data = await compressAndEncrypt(dataJson, newKey);
       cryptoKey = newKey;
     }catch(e){
       // 迁移失败不影响使用，继续用旧密钥
@@ -1186,6 +1231,8 @@ function enterApp(){
   document.getElementById('setupPw2').value = '';
   resetAutoLock(); // #6 启动自动锁定计时
   startCountdownDisplay(); // #6 启动倒计时显示
+  clearInterval(autoSaveTimer);
+  autoSaveTimer = setInterval(() => { if(isDirty) persist(); }, 30000);
   renderSidebar();
   renderEntries();
 }
@@ -1194,6 +1241,8 @@ function lockApp(){
   clearTimeout(autoLockTimer);
   stopCountdownDisplay();
   if(_resetThrottleTimer){ clearTimeout(_resetThrottleTimer); _resetThrottleTimer = null; }
+  clearTimeout(_saveTimer);
+  clearInterval(autoSaveTimer);
   vault = [];
   cryptoKey = null;
   currentGroup = '全部';
@@ -1219,7 +1268,7 @@ async function appendAuditLog(){
   // 只保留最近 20 条
   if(auditLog.length > 20) auditLog = auditLog.slice(-20);
   // 通过 persist 整体加密写入文件（v2 格式 auditLog 在加密 blob 内）
-  try{ await persist(); }catch(e){}
+  try{ scheduleSave(); }catch(e){}
 }
 
 function showAuditLog(){
@@ -1239,14 +1288,28 @@ function showAuditLog(){
   openModal('auditModal');
 }
 
-// ==================== Persist ====================
+// ==================== Persist & Debounce ====================
+let _saveTimer = null;
+
 async function persist(){
   if(!vaultData || !cryptoKey) return;
   const json = JSON.stringify({v:vault, g:GROUPS_DATA, a:auditLog, t:totpSecret});
-  const enc2 = await encryptData(json, cryptoKey);
-  vaultData.data = enc2;
+  // 附上 SHA-256 校验和用于完整性验证
+  const hash = buf2hex(new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode(json))));
+  vaultData.data = await compressAndEncrypt(json + '::HASH::' + hash, cryptoKey);
   await saveToFile();
   isDirty = false;
+}
+
+// 防抖：连续操作只触发一次写入（停止操作 2 秒后保存）
+function scheduleSave() {
+  clearTimeout(_saveTimer);
+  isDirty = true;
+  _saveTimer = setTimeout(async () => {
+    if(isDirty){
+      try{ await persist(); }catch(e){}
+    }
+  }, 2000);
 }
 
 // ==================== Group Manager ====================
@@ -1418,7 +1481,7 @@ async function saveEditGroup(idx){
     vault.forEach(e => { if(e.group === oldName) e.group = newName; });
     if(currentGroup === oldName) currentGroup = newName;
   }
-  await persist();
+  scheduleSave();
   editingIdx = -1;
   renderGroupManager();
   renderSidebar();
@@ -1432,7 +1495,7 @@ async function addGroup(){
   if(GROUPS_DATA.some(g => g.name === name)){ toast('该分组已存在'); return; }
   const icon = document.getElementById('newGroupIcon').value;
   GROUPS_DATA.push({name, icon});
-  await persist();
+  scheduleSave();
   document.getElementById('newGroupName').value = '';
   renderGroupManager();
   renderSidebar();
@@ -1464,7 +1527,7 @@ async function deleteGroup(idx){
   clearTimeout(pendingDeleteTimer);
   pendingDeleteIdx = -1;
   GROUPS_DATA.splice(idx, 1);
-  await persist();
+  scheduleSave();
   renderGroupManager();
   renderSidebar();
   toast('分组已删除并保存', 'success');
@@ -1476,7 +1539,7 @@ async function moveGroup(idx, dir){
   const tmp = GROUPS_DATA[idx];
   GROUPS_DATA[idx] = GROUPS_DATA[newIdx];
   GROUPS_DATA[newIdx] = tmp;
-  await persist();
+  scheduleSave();
   renderGroupManager();
   renderSidebar();
 }
@@ -1543,12 +1606,24 @@ function renderEntries(){
     (e.note||'').toLowerCase().includes(kw)   // #9 备注也纳入搜索
   );
 
+  // 搜索条件或分组变化时重置分页
+  const filterKey = currentGroup + '::' + kw;
+  if(filterKey !== _lastFilterKey){
+    _lastFilterKey = filterKey;
+    renderPage = 0;
+  }
+
   if(list.length === 0){
     content.innerHTML = `<div class="empty"><div class="big">📭</div><div>${vault.length===0?'还没有保存任何账号':'没有匹配的结果'}</div><div style="margin-top:8px;font-size:13px">${vault.length===0?'点击右上角 + 添加 开始使用':''}</div></div>`;
     return;
   }
 
-  content.innerHTML = '<div class="entry-grid">' + list.map(e => `
+  // 分页：只渲染当前页可见条目
+  const end = (renderPage + 1) * PAGE_SIZE;
+  const page = list.slice(0, end);
+  const hasMore = list.length > end;
+
+  let html = '<div class="entry-grid">' + page.map(e => `
     <div class="entry-card">
       <div class="card-actions">
         <button class="btn btn-ghost btn-sm js-edit-entry" data-id="${e.id}">编辑</button>
@@ -1563,6 +1638,12 @@ function renderEntries(){
     </div>
   `).join('') + '</div>';
 
+  if(hasMore){
+    html += `<div style="text-align:center;padding:16px"><button class="btn btn-ghost btn-sm js-load-more">加载更多（${list.length - end} 条）</button></div>`;
+  }
+
+  content.innerHTML = html;
+
   // Attach real event listeners after DOM rebuild
   content.querySelectorAll('.js-delete-entry').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1573,6 +1654,13 @@ function renderEntries(){
   content.querySelectorAll('.js-edit-entry').forEach(btn => {
     btn.addEventListener('click', () => openEdit(btn.getAttribute('data-id')));
   });
+  const loadMore = content.querySelector('.js-load-more');
+  if(loadMore){
+    loadMore.addEventListener('click', () => {
+      renderPage++;
+      renderEntries();
+    });
+  }
 }
 
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -1682,7 +1770,7 @@ async function saveEntry(){
   }
 
   isDirty = true; // #3 标记有变更
-  await persist();
+  scheduleSave();
   renderSidebar();
   renderEntries();
   closeModal('entryModal');
@@ -1723,7 +1811,7 @@ async function undoDelete(){
   vault.sort((a, b) => (a.updated||0) - (b.updated||0));
   deletedEntry = null;
   isDirty = true; // #3
-  await persist();
+  scheduleSave();
   renderSidebar();
   renderEntries();
   toast('已撤销删除', 'success');
