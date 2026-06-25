@@ -1719,6 +1719,9 @@ function openAdd(){
   document.getElementById('entryPlatform').value = '';
   document.getElementById('entryUser').value = '';
   document.getElementById('entryPw').value = '';
+  document.getElementById('entryPw').type = 'password';
+  const pwToggle = document.querySelector('#entryPw').parentElement.querySelector('.toggle');
+  if(pwToggle) pwToggle.textContent = '显示';
   document.getElementById('entryUrl').value = '';
   document.getElementById('entryNote').value = '';
   document.getElementById('strengthBar').style.background = 'transparent';
@@ -1737,6 +1740,9 @@ function openEdit(id){
   document.getElementById('entryPlatform').value = e.platform||'';
   document.getElementById('entryUser').value = e.user||'';
   document.getElementById('entryPw').value = e.pw||'';
+  document.getElementById('entryPw').type = 'password';
+  const pwToggle = document.querySelector('#entryPw').parentElement.querySelector('.toggle');
+  if(pwToggle) pwToggle.textContent = '显示';
   document.getElementById('entryUrl').value = e.url||'';
   document.getElementById('entryNote').value = e.note||'';
   document.getElementById('hibpResult').textContent = '';
